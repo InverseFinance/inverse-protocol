@@ -2,15 +2,12 @@
 pragma solidity 0.7.3;
 
 import "./IStrat.sol";
+import "./IVault.sol";
 import "./DividendToken.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 
-interface IERC20Detailed is IERC20 {
-    function decimals() external view returns (uint8);
-}
-
-contract BaseVault is Ownable, Pausable, DividendToken {
+contract Vault is Ownable, Pausable, DividendToken {
     using SafeMath for uint256;
     using SafeERC20 for IERC20Detailed;
 
@@ -92,7 +89,7 @@ contract BaseVault is Ownable, Pausable, DividendToken {
     }
 
     function harvest(uint amount) public onlyHarvester returns (uint afterFee) {
-        require(amount <= underlyingYield());
+        require(amount <= underlyingYield(), "Amount larger than generated yield");
         strat.divest(amount);
         if(performanceFee > 0) {
             uint fee = amount.mul(performanceFee).div(MAX_FEE);
