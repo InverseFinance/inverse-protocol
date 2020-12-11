@@ -21,7 +21,7 @@ describe("test in prod", function() {
     });
 
     it("Should deploy DAI -> WETH Vault", async function() {
-        const Vault = await ethers.getContractFactory("Vault");
+        const Vault = await ethers.getContractFactory("EthVault");
         vault = await Vault.deploy(DAI_ADDRESS, WETH_ADDRESS, harvester.address, "Test DAI to ETH Vault", "testDAI>ETH");
 
         await vault.deployed();
@@ -74,8 +74,11 @@ describe("test in prod", function() {
     it("Should claim target token (ETH)", async function() {
         const unclaimedProfits = await vault.unclaimedProfit(IMPERSONATED_ADDRESS)
         expect(unclaimedProfits).to.gt(0);
-        await vault.claimProfit();
-        expect(await weth.balanceOf(IMPERSONATED_ADDRESS)).to.equal(unclaimedProfits);
+        const balanceBefore = await ethers.provider.getBalance(IMPERSONATED_ADDRESS)
+        const tx = await vault.claimETH({gasPrice:"1"});
+        const receipt = await tx.wait();
+        const balanceAfter = await ethers.provider.getBalance(IMPERSONATED_ADDRESS)
+        expect(balanceAfter.sub(balanceBefore.sub(receipt.cumulativeGasUsed))).to.equal(unclaimedProfits);
     })
 
     it("Should withdraw principal (ETH)", async function() {

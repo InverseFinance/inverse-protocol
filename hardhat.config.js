@@ -15,7 +15,7 @@ task("user-info", "Check vault user info")
     const underlyingBalance = await underlying.balanceOf(args.user);
     const underlyingSymbol = await underlying.symbol()
     const underlyingDecimals = await underlying.decimals()
-    const target = await ethers.getContractAt("ERC20", await vault.cash());
+    const target = await ethers.getContractAt("ERC20", await vault.target());
     const targetBalance = await target.balanceOf(args.user);
     const targetSymbol = await target.symbol()
     const targetDecimals = await target.decimals()
@@ -47,11 +47,11 @@ task("deposit", "Deposit underlying to a vault")
     const vault = await ethers.getContractAt("Vault", args.vault);
     const userAddress = await (await ethers.getSigners())[0].getAddress()
     const unclaimedProfit = await vault.unclaimedProfit(userAddress)
-    const target = await ethers.getContractAt("ERC20", await vault.cash());
+    const target = await ethers.getContractAt("ERC20", await vault.target());
     const decimals = await target.decimals();
     const symbol = await target.symbol();
     console.log("Claiming", ethers.utils.formatUnits(unclaimedProfit, decimals), symbol)
-    const tx = await vault.claimProfit();
+    const tx = await vault.claim();
     console.log("Claim tx:", tx.hash)
   })
 
@@ -61,7 +61,7 @@ task("harvest", "Harvest a vault")
   .setAction(async args => {
     const vault = await ethers.getContractAt("Vault", args.vault);
     const underlyingAddress = await vault.underlying()
-    const targetAddress = await vault.cash();
+    const targetAddress = await vault.target();
     const decimals = await vault.decimals();
     const harvester = await ethers.getContractAt("UniswapHarvester", await vault.harvester());
     if(!args.amount) {

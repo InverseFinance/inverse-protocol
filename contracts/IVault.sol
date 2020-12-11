@@ -11,5 +11,6 @@ interface IVault {
     function harvest(uint amount) external returns (uint afterFee);
     function distribute(uint amount) external;
     function underlying() external view returns (IERC20Detailed);
-    function cash() external view returns (IERC20);
+    function target() external view returns (IERC20);
+    function owner() external view returns (address);
 }

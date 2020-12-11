@@ -9,7 +9,7 @@ import "./math/SafeMathInt.sol";
 
 /// @title Dividend-Paying Token
 /// @author Roger Wu (https://github.com/roger-wu)
-/// @dev A mintable ERC20 token that allows anyone to pay and distribute cash
+/// @dev A mintable ERC20 token that allows anyone to pay and distribute a target token
 ///  to token holders as dividends and allows token holders to withdraw their dividends.
 ///  Reference: the source code of PoWH3D: https://etherscan.io/address/0xB3775fB83F7D12A36E0475aBdD1FCA35c091efBe#code
 contract DividendToken is ERC20 {
@@ -18,9 +18,9 @@ contract DividendToken is ERC20 {
   using SafeMathInt for int256;
   using SafeERC20 for IERC20;
   
-  IERC20 public cash;
+  IERC20 public target;
 
-  // With `magnitude`, we can properly distribute dividends even if the amount of received cash is small.
+  // With `magnitude`, we can properly distribute dividends even if the amount of received target is small.
   // For more discussion about choosing the value of `magnitude`,
   //  see https://github.com/ethereum/EIPs/issues/1726#issuecomment-472352728
   uint256 constant internal magnitude = 2**128;
@@ -41,28 +41,24 @@ contract DividendToken is ERC20 {
   mapping(address => int256) internal magnifiedDividendCorrections;
   mapping(address => uint256) internal withdrawnDividends;
 
-  constructor(IERC20 cash_, string memory name_, string memory symbol_, uint8 decimals_) ERC20(name_, symbol_) {
+  constructor(IERC20 target_, string memory name_, string memory symbol_, uint8 decimals_) ERC20(name_, symbol_) {
     _setupDecimals(decimals_);
-    cash = cash_;
+    target = target_;
   }
 
-  fallback() external {
-    withdrawDividend(msg.sender);
-  }
-
-  /// @notice Distributes cash to token holders as dividends.
+  /// @notice Distributes target to token holders as dividends.
   /// @dev It reverts if the total supply of tokens is 0.
-  /// It emits the `DividendsDistributed` event if the amount of received cash is greater than 0.
-  /// About undistributed cash:
-  ///   In each distribution, there is a small amount of cash not distributed,
+  /// It emits the `DividendsDistributed` event if the amount of received target is greater than 0.
+  /// About undistributed target tokens:
+  ///   In each distribution, there is a small amount of target not distributed,
   ///     the magnified amount of which is
   ///     `(amount * magnitude) % totalSupply()`.
-  ///   With a well-chosen `magnitude`, the amount of undistributed cash
+  ///   With a well-chosen `magnitude`, the amount of undistributed target
   ///     (de-magnified) in a distribution can be less than 1 wei.
-  ///   We can actually keep track of the undistributed cash in a distribution
+  ///   We can actually keep track of the undistributed target in a distribution
   ///     and try to distribute it in the next distribution,
   ///     but keeping track of such data on-chain costs much more than
-  ///     the saved cash, so we don't do that.
+  ///     the saved target, so we don't do that.
   function distributeDividends(uint amount) internal {
     require(totalSupply() > 0);
     require(amount > 0);
@@ -71,19 +67,19 @@ contract DividendToken is ERC20 {
       (amount).mul(magnitude) / totalSupply()
     );
 
-    cash.safeTransferFrom(msg.sender, address(this), amount);
+    target.safeTransferFrom(msg.sender, address(this), amount);
 
     emit DividendsDistributed(msg.sender, amount);
   }
 
-  /// @notice Withdraws the cash distributed to the sender.
-  /// @dev It emits a `DividendWithdrawn` event if the amount of withdrawn cash is greater than 0.
+  /// @notice Withdraws the target distributed to the sender.
+  /// @dev It emits a `DividendWithdrawn` event if the amount of withdrawn target is greater than 0.
   function withdrawDividend(address user) internal {
     uint256 _withdrawableDividend = withdrawableDividendOf(user);
     if (_withdrawableDividend > 0) {
       withdrawnDividends[user] = withdrawnDividends[user].add(_withdrawableDividend);
       emit DividendWithdrawn(user, _withdrawableDividend);
-      cash.safeTransfer(user, _withdrawableDividend);
+      target.safeTransfer(user, _withdrawableDividend);
     }
   }
 
@@ -154,17 +150,17 @@ contract DividendToken is ERC20 {
       .add( (magnifiedDividendPerShare.mul(value)).toInt256Safe() );
   }
 
-  /// @dev This event MUST emit when cash is distributed to token holders.
-  /// @param from The address which sends cash to this contract.
-  /// @param weiAmount The amount of distributed cash in wei.
+  /// @dev This event MUST emit when target is distributed to token holders.
+  /// @param from The address which sends target to this contract.
+  /// @param weiAmount The amount of distributed target in wei.
   event DividendsDistributed(
     address indexed from,
     uint256 weiAmount
   );
 
   /// @dev This event MUST emit when an address withdraws their dividend.
-  /// @param to The address which withdraws cash from this contract.
-  /// @param weiAmount The amount of withdrawn cash in wei.
+  /// @param to The address which withdraws target from this contract.
+  /// @param weiAmount The amount of withdrawn target in wei.
   event DividendWithdrawn(
     address indexed to,
     uint256 weiAmount
