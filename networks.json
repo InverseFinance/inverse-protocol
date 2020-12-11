@@ -6,5 +6,13 @@
         "harvester":"0x6dE45B9a80847Ce6Fd53819bA31cf296Ecc346bC",
         "dai_vault":"0xC5e43BADAb90AB57CDe5D7c201EDdaFCB03Ba8c8",
         "cdai_strat":"0x6e15C10cCF5fc329173162B5B4eFf244f94Ee8B5"
+    },
+    "mainnet":{
+        "weth":"0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "dai":"0x6b175474e89094c44da98b954eedeac495271d0f",
+        "cdai":"0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643",
+        "harvester":"0x5FbDB2315678afecb367f032d93F642f64180aa3",
+        "dai_vault":"0x2dCdCA085af2E258654e47204e483127E0D8b277",
+        "cdai_strat":"0x42bE0F4FA30980f8261325E9C8Fc9CBd08dE9D6C"
     }
 }
