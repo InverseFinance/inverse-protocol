@@ -3,8 +3,8 @@
         "weth":"0xc778417e063141139fce010982780140aa0cd5ab",
         "dai":"0x5592ec0cfb4dbc12d3ab100b257153436a1f0fea",
         "cdai":"0x6d7f0754ffeb405d23c51ce938289d4835be3b14",
-        "harvester":"0x2Afb125bB848049b54D0903A1fd365E7518f581A",
-        "dai_vault":"0xdAA4826D16E1884f6a2276260D298B239441b30D",
-        "cdai_strat":"0x7ee4F454Ed67aB003552136c305875811bea2900"
+        "harvester":"0x6dE45B9a80847Ce6Fd53819bA31cf296Ecc346bC",
+        "dai_vault":"0xC5e43BADAb90AB57CDe5D7c201EDdaFCB03Ba8c8",
+        "cdai_strat":"0x6e15C10cCF5fc329173162B5B4eFf244f94Ee8B5"
     }
 }
