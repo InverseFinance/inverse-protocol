@@ -1,5 +1,4 @@
-# Interest Converter
-(better name to be determined)
+# Inverse Protocol
 
 Converts yield provided by a lending protocol or yield optimizer to a different token.
 
