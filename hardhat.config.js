@@ -1,5 +1,6 @@
 const { task } = require("hardhat/config");
 
+require("@nomiclabs/hardhat-etherscan");
 require("@nomiclabs/hardhat-waffle");
 require('dotenv').config()
 
@@ -71,7 +72,18 @@ task("harvest", "Harvest a vault")
     }
     console.log("Harvesting", ethers.utils.formatUnits(args.amount, decimals))
     const deadline = Math.ceil(Date.now()/1000) + 3600 // 1 hour from now
-    const tx = await harvester.harvestVault(args.vault, args.amount, 0, [underlyingAddress, targetAddress], deadline)
+    const tx = await harvester.harvestVault(args.vault, args.amount, 0, [underlyingAddress, targetAddress], deadline, {
+      gasLimit:2000000
+    })
+    console.log(tx.hash)
+  })
+
+  task("changeHarvester", "Change a vault harvester")
+  .addParam("vault", "vault address")
+  .addParam("harvester", "harvester address")
+  .setAction(async args => {
+    const vault = await ethers.getContractAt("Vault", args.vault);
+    const tx = await vault.changeHarvester(args.harvester)
     console.log(tx.hash)
   })
 
@@ -94,6 +106,9 @@ module.exports = {
       url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
       accounts: [process.env.MAINNET_PRIVKEY]
     }
+  },
+  etherscan: {
+    apiKey: process.env.ETHERSCAN_API_KEY
   },
   solidity: {
     compilers: [ {

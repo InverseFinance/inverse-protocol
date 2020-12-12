@@ -68,7 +68,7 @@
     "patch-package" "^6.2.2"
     "postinstall-postinstall" "^2.1.0"
 
-"@ethersproject/abi@^5.0.1", "@ethersproject/abi@^5.0.5", "@ethersproject/abi@5.0.9":
+"@ethersproject/abi@^5.0.1", "@ethersproject/abi@^5.0.2", "@ethersproject/abi@^5.0.5", "@ethersproject/abi@5.0.9":
   "integrity" "sha512-ily2OufA2DTrxkiHQw5GqbkMSnNKuwZBqKsajtT0ERhZy1r9w2CpW1bmtRMIGzaqQxCdn/GEoFogexk72cBBZQ=="
   "resolved" "https://registry.npmjs.org/@ethersproject/abi/-/abi-5.0.9.tgz"
   "version" "5.0.9"
@@ -122,7 +122,7 @@
     "@ethersproject/logger" "^5.0.5"
     "@ethersproject/properties" "^5.0.3"
 
-"@ethersproject/address@^5.0.4", "@ethersproject/address@^5.0.5", "@ethersproject/address@5.0.8":
+"@ethersproject/address@^5.0.2", "@ethersproject/address@^5.0.4", "@ethersproject/address@^5.0.5", "@ethersproject/address@5.0.8":
   "integrity" "sha512-V87DHiZMZR6hmFYmoGaHex0D53UEbZpW75uj8AqPbjYUmi65RB4N2LPRcJXuWuN2R0Y2CxkvW6ArijWychr5FA=="
   "resolved" "https://registry.npmjs.org/@ethersproject/address/-/address-5.0.8.tgz"
   "version" "5.0.8"
@@ -533,6 +533,18 @@
   "integrity" "sha512-uTFHDhhvJ+UjfvvMeQxD3ZALuzuI3FXzTYT1Z5N3ebyZL5z4Ogwt55GB0R9tdKY0p5HhDhBjU/gsCjUEwIVoaw=="
   "resolved" "https://registry.npmjs.org/@nomiclabs/hardhat-ethers/-/hardhat-ethers-2.0.1.tgz"
   "version" "2.0.1"
+
+"@nomiclabs/hardhat-etherscan@^2.1.0":
+  "integrity" "sha512-YK9/UZI1Ct9TYfqZJnjIERlFC7bFrG0eUS2O0kFrH8RjLdcQXBI0GNpxXGAuDbotBg0t8wRKHibbK50TQu0ybA=="
+  "resolved" "https://registry.npmjs.org/@nomiclabs/hardhat-etherscan/-/hardhat-etherscan-2.1.0.tgz"
+  "version" "2.1.0"
+  dependencies:
+    "@ethersproject/abi" "^5.0.2"
+    "@ethersproject/address" "^5.0.2"
+    "cbor" "^5.0.2"
+    "fs-extra" "^7.0.1"
+    "node-fetch" "^2.6.0"
+    "semver" "^6.3.0"
 
 "@nomiclabs/hardhat-waffle@^2.0.1":
   "integrity" "sha512-2YR2V5zTiztSH9n8BYWgtv3Q+EL0N5Ltm1PAr5z20uAY4SkkfylJ98CIqt18XFvxTD5x4K2wKBzddjV9ViDAZQ=="
@@ -1911,6 +1923,14 @@
   "integrity" "sha1-G2gcIf+EAzyCZUMJBolCDRhxUdw="
   "resolved" "https://registry.npmjs.org/caseless/-/caseless-0.12.0.tgz"
   "version" "0.12.0"
+
+"cbor@^5.0.2":
+  "integrity" "sha512-qzEc7kUShdMbWTaUH7X+aHW8owvBU3FS0dfYR1lGYpoZr0mGJhhojLlZJH653x/DfeMZ56h315FRNBUIG1R7qg=="
+  "resolved" "https://registry.npmjs.org/cbor/-/cbor-5.1.0.tgz"
+  "version" "5.1.0"
+  dependencies:
+    "bignumber.js" "^9.0.0"
+    "nofilter" "^1.0.4"
 
 "chai@^4.2.0":
   "integrity" "sha512-XQU3bhBukrOsQCuwZndwGcCVQHyZi53fQ6Ys1Fym7E4olpIqqZZhhoFJoaKVvV17lWQoXYwgWN2nF5crA8J2jw=="
@@ -5222,6 +5242,11 @@
   "integrity" "sha512-L/Eg02Epx6Si2NXmedx+Okg+4UHqmaf3TNcxd50SF9NQGcJaON3AtU++kax69XV7YWz4tUspqZSAsVofhFKG2w=="
   "resolved" "https://registry.npmjs.org/node-gyp-build/-/node-gyp-build-3.7.0.tgz"
   "version" "3.7.0"
+
+"nofilter@^1.0.4":
+  "integrity" "sha512-N8lidFp+fCz+TD51+haYdbDGrcBWwuHX40F5+z0qkUjMJ5Tp+rdSuAkMJ9N9eoolDlEVTf6u5icM+cNKkKW2mA=="
+  "resolved" "https://registry.npmjs.org/nofilter/-/nofilter-1.0.4.tgz"
+  "version" "1.0.4"
 
 "normalize-package-data@^2.3.2":
   "integrity" "sha512-/5CMN3T0R4XTj4DcGaexo+roZSdSFW/0AOOTROrjxzCG1wrWXEsGbRKevjlIL+ZDE4sZlJr5ED4YW0yqmkK+eA=="
