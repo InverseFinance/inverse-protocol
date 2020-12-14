@@ -32,16 +32,18 @@ contract YTokenStrat is IStrat {
 
     function invest() external override onlyVault {
         uint balance = underlying.balanceOf(address(this));
-        require(balance > 0);
+        require(balance > 0, "Nothing to invest");
         yToken.deposit(balance, address(this));
     }
 
     function divest(uint amount) external override onlyVault {
-        require(yToken.withdraw(amount.mul(yToken.pricePerShare()), address(vault)) == amount);
+        require(yToken.withdraw(sharesForAmount(amount)+1, address(vault)) == amount, "Returned amount is incorrect");
     }
 
     function calcTotalValue() external view override returns (uint) {
-        return yToken.balanceOf(address(this)).mul(yToken.pricePerShare());
+        return yToken.balanceOf(address(this))
+        .mul(yToken.pricePerShare())
+        .div(10**18);
     }
 
     // IMPORTANT: This function can only be called by the timelock to recover any token amount including deposited yToken
@@ -61,6 +63,10 @@ contract YTokenStrat is IStrat {
         require(msg.sender == owner);
         require(_token != address(yToken));
         IERC20(_token).transfer(owner, IERC20(_token).balanceOf(address(this)));
+    }
+
+    function sharesForAmount(uint amount) internal view returns (uint) {
+        return amount.mul(yToken.totalSupply()).div(yToken.totalAssets());
     }
 
 }

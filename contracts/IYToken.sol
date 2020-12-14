@@ -7,4 +7,6 @@ interface IYToken {
     function deposit(uint amount, address recipient) external returns (uint);
     function withdraw(uint shares, address recipient) external returns (uint);
     function token() external returns (address);
+    function totalAssets() external view returns (uint);
+    function totalSupply() external view returns (uint);
 }
