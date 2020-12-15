@@ -62,7 +62,7 @@ contract YTokenStrat is IStrat {
             if(withdrawalCap > 0) { // 0 implies no cap
                 require(missingAmount <= withdrawalCap, "Reached withdrawal cap"); // Big withdrawals can cause slippage on Yearn's side. Users must split into multiple txs
             }
-            yToken.withdraw(sharesForAmount(missingAmount) + 1, address(this));  // +1 is a fix for a rounding issue
+            yToken.withdraw(sharesForAmount(missingAmount) + 1);  // +1 is a fix for a rounding issue
         }
         underlying.transfer(address(vault), amount);
         if(!zeroUnutilized) syncUntilized(); // unutilized can only go down when withdrawing.
@@ -103,19 +103,19 @@ contract YTokenStrat is IStrat {
 
     // Bypasses withdrawal cap. Should be used with care. Can cause Yearn slippage with large amounts.
     function withdrawShares(uint shares) public onlyOwner {
-        yToken.withdraw(shares, address(this));
+        yToken.withdraw(shares);
         syncUntilized();
     }
 
     // Bypasses withdrawal cap. Should be used with care. Can cause Yearn slippage with large amounts.
     function withdrawUnderlying(uint amount) public onlyOwner {
-        yToken.withdraw(sharesForAmount(amount), address(this));
+        yToken.withdraw(sharesForAmount(amount));
         syncUntilized();
     }
 
     // Bypasses withdrawal cap. Should be used with care. Can cause Yearn slippage with large amounts.
     function withdrawAll() public onlyOwner {
-        yToken.withdraw(yToken.balanceOf(address(this)), address(this));
+        yToken.withdraw();
         syncUntilized();
     }
 
