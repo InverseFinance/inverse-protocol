@@ -58,9 +58,9 @@ contract YTokenStrat is IStrat {
             yToken.withdraw(
                 Math.min(
                     sharesForAmount(missingAmount)+1, // +1 is a fix for a rounding issue
-                    yToken.balanceOf(this)
+                    yToken.balanceOf(address(this))
                 )
-            )
+            );
         }
         underlying.safeTransfer(address(vault), amount);
     }
