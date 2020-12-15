@@ -13,13 +13,14 @@ contract YTokenStrat is IStrat {
     
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
+    using SafeERC20 for IERC20Detailed;
     IVault public vault;
     IYToken public yToken;
-    IERC20 public underlying;
+    IERC20Detailed public underlying;
     Timelock public timelock;
-    bool public depositsPaused; // pausing only applies to Yearn deposits. Not strategy
-    uint public withdrawalCap; // 0 implies no cap
-    uint public unutilized; // similar to Uniswap reserves. Discrepancies are dangerous
+    uint public minWithdrawalCap; // prevents the owner from completely blocking withdrawals
+    uint public withdrawalCap = uint(-1); // max uint
+    uint public buffer; // buffer of underlying to keep in the strat
     string public name = "Yearn V2"; // for display purposes only
 
     modifier onlyVault {
@@ -36,36 +37,27 @@ contract YTokenStrat is IStrat {
         vault = vault_;
         yToken = yToken_;
         timelock = Timelock(vault.timelock()); // use the same timelock from the vault
-        underlying = IERC20(yToken_.token());
+        underlying = IERC20Detailed(yToken_.token());
         underlying.safeApprove(address(yToken), uint(-1)); // intentional underflow
+        minWithdrawalCap = 1000 * (10 ** underlying.decimals()); // 10k min withdrawal cap
     }
 
     function invest() external override onlyVault {
-        uint amount = underlying.balanceOf(address(this)).sub(unutilized); // unutilized reserves do not count for incoming investment
-        require(amount > 0, "Nothing to invest");
-        if(!depositsPaused) {
+        uint balance = underlying.balanceOf(address(this));
+        if(balance > buffer) {
             uint max = yToken.availableDepositLimit();
-            yToken.deposit(Math.min(amount, max), address(this)); // respect Yearn's limits and leave the remainder here
-            if(max < amount) { // some funds are left unutilized
-                syncUntilized();
-            }
-        } else {
-            syncUntilized(); // just keep the entire amount here
+            yToken.deposit(Math.min(balance - buffer, max)); // can't underflow because of above if statement
         }
     }
 
     function divest(uint amount) external override onlyVault {
-        require(amount > 0, "Nothing to divest"); // this fails when migrating away but there are no deposits. But in that case, what are we even migrating?
-        bool zeroUnutilized = unutilized == 0; // to save on SSTOREs
-        if(unutilized < amount) {
-            uint missingAmount = amount.sub(unutilized);
-            if(withdrawalCap > 0) { // 0 implies no cap
-                require(missingAmount <= withdrawalCap, "Reached withdrawal cap"); // Big withdrawals can cause slippage on Yearn's side. Users must split into multiple txs
-            }
+        uint balance = underlying.balanceOf(address(this));
+        if(balance < amount) {
+            uint missingAmount = amount - balance; // can't underflow because of above it statement
+            require(missingAmount <= withdrawalCap, "Reached withdrawal cap"); // Big withdrawals can cause slippage on Yearn's side. Users must split into multiple txs
             yToken.withdraw(sharesForAmount(missingAmount) + 1);  // +1 is a fix for a rounding issue
         }
-        underlying.transfer(address(vault), amount);
-        if(!zeroUnutilized) syncUntilized(); // unutilized can only go down when withdrawing.
+        underlying.safeTransfer(address(vault), amount);
     }
 
     function totalYearnDeposits() public view returns (uint) {
@@ -88,58 +80,51 @@ contract YTokenStrat is IStrat {
     // In the future, the timelock contract will be destroyed and the functionality will be removed after the code gets audited
     function rescue(address _token, address _to, uint _amount) external {
         require(msg.sender == address(timelock));
-        IERC20(_token).transfer(_to, _amount);
+        IERC20(_token).safeTransfer(_to, _amount);
     }
 
     // Any tokens (other than the yToken and underlying) that are sent here by mistake are recoverable by the vault owner
     function sweep(address _token, address _to) public onlyOwner {
         require(_token != address(yToken) && _token != address(underlying));
-        IERC20(_token).transfer(_to, IERC20(_token).balanceOf(address(this)));
-    }
-
-    function pauseDeposits(bool value) public onlyOwner {
-        depositsPaused = value;
+        IERC20(_token).safeTransfer(_to, IERC20(_token).balanceOf(address(this)));
     }
 
     // Bypasses withdrawal cap. Should be used with care. Can cause Yearn slippage with large amounts.
     function withdrawShares(uint shares) public onlyOwner {
         yToken.withdraw(shares);
-        syncUntilized();
     }
 
     // Bypasses withdrawal cap. Should be used with care. Can cause Yearn slippage with large amounts.
     function withdrawUnderlying(uint amount) public onlyOwner {
         yToken.withdraw(sharesForAmount(amount));
-        syncUntilized();
     }
 
     // Bypasses withdrawal cap. Should be used with care. Can cause Yearn slippage with large amounts.
     function withdrawAll() public onlyOwner {
         yToken.withdraw();
-        syncUntilized();
     }
 
     function depositUnderlying(uint amount) public onlyOwner {
-        yToken.deposit(amount, address(this));
-        syncUntilized();
+        yToken.deposit(amount);
     }
 
     function depositAll() public onlyOwner {
-        yToken.deposit(underlying.balanceOf(address(this)), address(this));
-        syncUntilized();
+        yToken.deposit(underlying.balanceOf(address(this)));
     }
 
-    // 0 implies no cap
+    // set buffer to -1 to pause deposits to yearn. 0 to remove buffer.
+    function setBuffer(uint _buffer) public onlyOwner {
+        buffer = _buffer;
+    }
+
+    // set to -1 for no cap
     function setWithdrawalCap(uint underlyingCap) public onlyOwner {
+        require(underlyingCap >= minWithdrawalCap);
         withdrawalCap = underlyingCap;
     }
 
     function sharesForAmount(uint amount) internal view returns (uint) {
         return amount.mul(yToken.totalSupply()).div(yToken.totalAssets());
-    }
-
-    function syncUntilized() internal {
-        unutilized = underlying.balanceOf(address(this));
     }
 
 }
