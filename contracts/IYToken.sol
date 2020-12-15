@@ -10,4 +10,5 @@ interface IYToken {
     function totalAssets() external view returns (uint);
     function totalSupply() external view returns (uint);
     function availableDepositLimit() external view returns (uint);
+    function decimals() external view returns (uint8);
 }
