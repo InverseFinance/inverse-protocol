@@ -13,4 +13,5 @@ interface IVault {
     function underlying() external view returns (IERC20Detailed);
     function target() external view returns (IERC20);
     function owner() external view returns (address);
+    function timelock() external view returns (address payable);
 }
