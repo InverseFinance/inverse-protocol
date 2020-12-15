@@ -18,7 +18,7 @@ contract YTokenStrat is IStrat {
     IYToken public yToken;
     IERC20Detailed public underlying;
     Timelock public timelock;
-    uint public minWithdrawalCap; // prevents the owner from completely blocking withdrawals
+    uint public immutable minWithdrawalCap; // prevents the owner from completely blocking withdrawals
     uint public withdrawalCap = uint(-1); // max uint
     uint public buffer; // buffer of underlying to keep in the strat
     string public name = "Yearn V2"; // for display purposes only
@@ -55,7 +55,12 @@ contract YTokenStrat is IStrat {
         if(balance < amount) {
             uint missingAmount = amount - balance; // can't underflow because of above it statement
             require(missingAmount <= withdrawalCap, "Reached withdrawal cap"); // Big withdrawals can cause slippage on Yearn's side. Users must split into multiple txs
-            yToken.withdraw(sharesForAmount(missingAmount) + 1);  // +1 is a fix for a rounding issue
+            yToken.withdraw(
+                Math.min(
+                    sharesForAmount(missingAmount)+1, // +1 is a fix for a rounding issue
+                    yToken.balanceOf(this)
+                )
+            )
         }
         underlying.safeTransfer(address(vault), amount);
     }
