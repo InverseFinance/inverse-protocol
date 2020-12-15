@@ -59,7 +59,7 @@ describe("yearn v2 migration", function() {
     })
 
     it("Should withdraw", async function() {
-        const amount = ethers.utils.parseEther("1435.000000000000000009")
+        const amount = 2
         await hre.network.provider.request({
             method: "hardhat_impersonateAccount",
             params: [DEPOSITOR]}

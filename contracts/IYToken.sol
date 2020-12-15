@@ -9,4 +9,5 @@ interface IYToken {
     function token() external returns (address);
     function totalAssets() external view returns (uint);
     function totalSupply() external view returns (uint);
+    function availableDepositLimit() external view returns (uint);
 }
