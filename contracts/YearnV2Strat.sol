@@ -81,7 +81,7 @@ contract YTokenStrat is IStrat {
     }
 
     // IMPORTANT: This function can only be called by the timelock to recover any token amount including deposited yToken and underlying
-    // However, the owner of the timelock must first submit their request and wait 7 days before confirming.
+    // However, the owner of the timelock must first submit their request and wait 2 days before confirming.
     // This gives depositors a good window to withdraw before a potentially malicious rescue
     // The intent is for the owner to be able to rescue funds in the case they become stuck after launch
     // However, users should not trust the owner and watch the timelock contract least once a week on Etherscan
