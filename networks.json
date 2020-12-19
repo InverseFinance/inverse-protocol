@@ -13,6 +13,7 @@
         "wbtc":"0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
         "cdai":"0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643",
         "harvester":"0x7F058B17648a257ADD341aB76FeBC21794c6e118",
+        "wbtc_harvester":"0xc6479a77eCbd54893590d544C26Eab6647e2a259",
         "dai_vault":"0x2dCdCA085af2E258654e47204e483127E0D8b277",
         "wbtc_vault":"0xc8f2E91dC9d198edEd1b2778F6f2a7fd5bBeac34",
         "cdai_strat":"0x42bE0F4FA30980f8261325E9C8Fc9CBd08dE9D6C",

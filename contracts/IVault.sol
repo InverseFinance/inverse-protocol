@@ -14,4 +14,5 @@ interface IVault {
     function target() external view returns (IERC20);
     function owner() external view returns (address);
     function timelock() external view returns (address payable);
+    function claimOnBehalf(address recipient) external;
 }
