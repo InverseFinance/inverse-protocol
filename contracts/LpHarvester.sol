@@ -1,4 +1,4 @@
-//SPDX-License-Identifier: Unlicense
+
 pragma solidity 0.7.3;
 // Experimental ABIEncoderV2 required for compilation and use of KP3R interfaces. This could be written in Solidity 0.8 instead, which uses ABIEncoderV2 by default.
 
@@ -102,7 +102,7 @@ contract LpUniswapHarvester is Ownable {
 
     // no tokens should ever be stored on this contract. Any tokens that are sent here by mistake are recoverable by the owner
     function sweep(address _token) external onlyOwner {
-        IERC20(_token).transfer(owner(), IERC20(_token).balanceOf(address(this)));
+        IERC20(_token).transfer(owner(), IERC20(_token).balanceOf(address(this))); }
         
         function work() public upkeep {
         bool worked = harvestVault();
@@ -121,8 +121,9 @@ contract LpUniswapHarvester is Ownable {
             if () { 
                 return true;
             }
+       }
         return false; 
-        }
+        
     }
     
     //Pays Keeper in ETH
