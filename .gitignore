@@ -1,6 +1,12 @@
 node_modules
 .env
 
-#Hardhat files
+# npm
+package-lock.json
+
+# yarn
+yarn-error.log
+
+# Hardhat files
 cache
 artifacts

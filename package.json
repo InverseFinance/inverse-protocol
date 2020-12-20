@@ -4,7 +4,9 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "./node_modules/solhint/solhint.js 'contracts/**/*.sol'",
+    "lint-fix": "./node_modules/solhint/solhint.js --fix 'contracts/**/*.sol'"
   },
   "repository": {
     "type": "git",
@@ -23,7 +25,8 @@
     "chai": "^4.2.0",
     "ethereum-waffle": "^3.2.1",
     "ethers": "^5.0.23",
-    "hardhat": "^2.0.4"
+    "hardhat": "^2.0.4",
+    "solhint": "^3.3.2"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^3.3.0",
