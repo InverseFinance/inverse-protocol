@@ -5392,6 +5392,11 @@
   dependencies:
     "wrappy" "1"
 
+"openzeppelin-solidity-2.3.0@npm:openzeppelin-solidity@2.3.0":
+  "integrity" "sha512-QYeiPLvB1oSbDt6lDQvvpx7k8ODczvE474hb2kLXZBPKMsxKT1WxTCHBYrCU7kS7hfAku4DcJ0jqOyL+jvjwQw=="
+  "resolved" "https://registry.npmjs.org/openzeppelin-solidity/-/openzeppelin-solidity-2.3.0.tgz"
+  "version" "2.3.0"
+
 "os-homedir@^1.0.0":
   "integrity" "sha1-/7xJiDNuDoM94MFox+8VISGqf7M="
   "resolved" "https://registry.npmjs.org/os-homedir/-/os-homedir-1.0.2.tgz"
