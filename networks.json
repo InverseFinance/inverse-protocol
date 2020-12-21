@@ -10,14 +10,19 @@
     "mainnet":{
         "weth":"0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
         "dai":"0x6b175474e89094c44da98b954eedeac495271d0f",
+        "yfi":"0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e",
         "wbtc":"0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
         "cdai":"0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643",
         "harvester":"0x7F058B17648a257ADD341aB76FeBC21794c6e118",
         "wbtc_harvester":"0xc6479a77eCbd54893590d544C26Eab6647e2a259",
         "dai_vault":"0x2dCdCA085af2E258654e47204e483127E0D8b277",
         "wbtc_vault":"0xc8f2E91dC9d198edEd1b2778F6f2a7fd5bBeac34",
+        "yfi_vault":"0x41D079ce7282d49bf4888C71B5D9E4A02c371F9B",
         "cdai_strat":"0x42bE0F4FA30980f8261325E9C8Fc9CBd08dE9D6C",
         "wbtc_cdai_strat":"0x42b5D4A11C8Fe76D114759F7f3D8e94ea28BdBe5",
-        "ydai_strat":"0xf8df8bb6A10eeC2619EbC1e384489B728B5b1C1f"
+        "ydai_strat":"0xf8df8bb6A10eeC2619EbC1e384489B728B5b1C1f",
+        "yfi_cdai_strat":"0xdc91f11dE8d294bD547d4F9009fa16466b2ca796",
+        "inv":"0x8805c8a08022a41fef736ea3af56dfdff282a9cb",
+        "staking":"0x96ad308Cb4479FD2558D40A4ABF420565FA80356"
     }
 }
