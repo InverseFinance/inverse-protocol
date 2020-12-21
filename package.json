@@ -4,7 +4,8 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "./node_modules/.bin/hardhat test",
+    "compile": "./node_modules/.bin/hardhat compile",
     "lint-contracts": "./node_modules/solhint/solhint.js 'contracts/**/*.sol'",
     "lint-js": "./node_modules/eslint/bin/eslint.js '**/*.js'"
   },
@@ -30,7 +31,7 @@
     "eslint-plugin-promise": "^4.2.1",
     "ethereum-waffle": "^3.2.1",
     "ethers": "^5.0.23",
-    "hardhat": "^2.0.4",
+    "hardhat": "^2.0.6",
     "solhint": "^3.3.2"
   },
   "dependencies": {
