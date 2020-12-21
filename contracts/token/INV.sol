@@ -112,6 +112,15 @@ contract INV {
         _moveDelegates(delegates[src], address(0), amount);
     }
 
+    // make token transferrable
+    function openTheGates() external onlyOwner {
+        tradable = true;
+    }
+
+    function closeTheGates() external onlyOwner {
+        tradable = false;
+    }
+
     // one way function
     function abolishSeizing() external onlyOwner {
         seizable = false;
