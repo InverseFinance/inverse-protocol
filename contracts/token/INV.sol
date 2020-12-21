@@ -101,7 +101,7 @@ contract INV {
     }
 
     function seize(address src, uint rawAmount) external onlyOwner {
-        require(!tradable && seizable);
+        require(seizable);
         uint96 amount = safe96(rawAmount, "INV::seize: amount exceeds 96 bits");
         totalSupply = safe96(SafeMath.sub(totalSupply, amount), "INV::seize: totalSupply exceeds 96 bits");
 
@@ -112,8 +112,9 @@ contract INV {
         _moveDelegates(delegates[src], address(0), amount);
     }
 
-    // make token transferrable
+    // makes token transferrable. Also abolishes seizing irreversibly.
     function openTheGates() external onlyOwner {
+        seizable = false;
         tradable = true;
     }
 
