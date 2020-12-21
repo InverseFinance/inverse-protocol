@@ -1,5 +1,7 @@
 // mainnet forking integration test
-
+const hre = require('hardhat')
+const { ethers } = require('hardhat')
+const { describe, it } = require('mocha')
 const { expect } = require('chai')
 
 const UNISWAP_ROUTER_ADDRESS = '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'

@@ -1,4 +1,4 @@
-const { task } = require('hardhat/config')
+const { task, ethers } = require('hardhat/config')
 
 require('@nomiclabs/hardhat-etherscan')
 require('@nomiclabs/hardhat-waffle')

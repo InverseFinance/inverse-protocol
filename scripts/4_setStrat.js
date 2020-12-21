@@ -1,3 +1,4 @@
+const { ethers } = require('hardhat')
 const prompt = require('async-prompt')
 
 async function main () {
