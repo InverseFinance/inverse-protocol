@@ -101,9 +101,17 @@ module.exports = {
       url: `https://eth-rinkeby.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
       accounts: [process.env.RINKEBY_PRIVKEY]
     },
+    ropsten: {
+      url: `https://eth-ropsten.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
+      accounts: [process.env.ROPSTEN_PRIVKEY]
+    },
     live: {
       url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
       accounts: [process.env.MAINNET_PRIVKEY]
+    },
+    ganache: {
+      url: 'http://127.0.0.1:7545',
+      accounts: [process.env.GANACHE_PRIVKEY]
     }
   },
   etherscan: {

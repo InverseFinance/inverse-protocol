@@ -8,7 +8,11 @@
     "test": "./node_modules/.bin/hardhat test",
     "compile": "./node_modules/.bin/hardhat compile --force",
     "lint-contracts": "./node_modules/solhint/solhint.js 'contracts/**/*.sol'",
-    "lint-js": "./node_modules/eslint/bin/eslint.js '**/*.js'"
+    "lint-js": "./node_modules/eslint/bin/eslint.js '**/*.js'",
+    "ganache": "./node_modules/.bin/hardhat run --network ganache",
+    "rinkeby": "./node_modules/.bin/hardhat run --network rinkeby",
+    "ropsten": "./node_modules/.bin/hardhat run --network ropsten",
+    "fork": "./node_modules/.bin/hardhat run"
   },
   "repository": {
     "type": "git",
