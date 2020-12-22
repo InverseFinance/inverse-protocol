@@ -8,7 +8,7 @@ async function main () {
   const Strat = await ethers.getContractFactory('FTokenStrat')
   const strat = await Strat.deploy(
     vault,
-    yToken
+    fToken
   )
   await strat.deployed()
 
