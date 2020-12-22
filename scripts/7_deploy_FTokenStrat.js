@@ -3,7 +3,7 @@ const prompt = require('async-prompt')
 
 async function main () {
   const vault = await prompt('Enter vault address: ')
-  const yToken = await prompt('Enter fToken token address: ')
+  const fToken = await prompt('Enter fToken token address: ')
 
   const Strat = await ethers.getContractFactory('FTokenStrat')
   const strat = await Strat.deploy(
