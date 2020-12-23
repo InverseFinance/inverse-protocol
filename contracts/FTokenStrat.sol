@@ -45,7 +45,7 @@ contract FTokenStrat is IStrat {
         vault = vault_;
         fToken = fToken_;
         timelock = Timelock(vault.timelock()); // use the same timelock from the vault
-        underlying = IERC20Detailed(fToken_.token());
+        underlying = IERC20Detailed(fToken_.underlying());
         underlying.safeApprove(address(fToken), uint(-1)); // intentional underflow
         minWithdrawalCap = 1000 * (10 ** underlying.decimals()); // 10k min withdrawal cap
     }

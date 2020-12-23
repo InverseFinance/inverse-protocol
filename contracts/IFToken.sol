@@ -9,8 +9,9 @@ interface IFToken {
     //function deposit() external returns (uint);
     //function withdraw(uint shares, address recipient) external returns (uint); // not used
     function withdraw(uint shares) external returns (uint);
-    //function withdraw() external returns (uint);
-    //function token() external returns (address);
+    function withdraw() external returns (uint);
+    function token() external returns (address);
+    function underlying() external returns (address);
     function underlyingBalanceInVault() external view returns (uint);
     function totalSupply() external view returns (uint);
     function availableToInvestOut() external view returns (uint);
