@@ -19,7 +19,7 @@ const overrides = {
 describe('harvest finance strategy experiments', function () {
   let strat, vault, dai, weth
 
-  it('Should deploy DAI -> WETH Vault', async function () {
+  it('Should deploy DAI -> YFI Vault', async function () {
     const Vault = await ethers.getContractFactory('Vault')
     vault = await Vault.deploy(DAI, YFI_ADDRESS, HARVESTER, 'HARVESTFI: DAI to YFI Vault', 'testDAI>ETH')
 
