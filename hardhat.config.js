@@ -69,7 +69,6 @@ task('harvest', 'Harvest a vault')
     } else {
       args.amount = ethers.utils.parseUnits(args.amount, decimals)
     }
-<<<<<<< HEAD
     console.log("Harvesting", ethers.utils.formatUnits(args.amount, decimals))
     const deadline = Math.ceil(Date.now()/1000) + 3600 // 1 hour from now
     let path = [underlyingAddress, targetAddress];
@@ -79,13 +78,6 @@ task('harvest', 'Harvest a vault')
       path = [underlyingAddress, weth, targetAddress]
     }
     const tx = await harvester.harvestVault(args.vault, args.amount, 0, path, deadline)
-=======
-    console.log('Harvesting', ethers.utils.formatUnits(args.amount, decimals))
-    const deadline = Math.ceil(Date.now() / 1000) + 3600 // 1 hour from now
-    const tx = await harvester.harvestVault(args.vault, args.amount, 0, [underlyingAddress, targetAddress], deadline, {
-      gasLimit: 2000000
-    })
->>>>>>> 1615879cb19683038c757bd47cd13100e69d0ed2
     console.log(tx.hash)
   })
 
