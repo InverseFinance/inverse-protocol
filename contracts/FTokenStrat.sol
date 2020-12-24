@@ -26,22 +26,29 @@ contract FTokenStrat is IStrat {
     IFToken public fToken;
     IERC20Detailed public underlying;
     Timelock public timelock;
+    address public strategist;  //strategy administrator
     uint public immutable minWithdrawalCap; // prevents the owner from completely blocking withdrawals
     uint public withdrawalCap = uint(-1); // max uint
-    uint public buffer; // buffer of underlying to keep in the strat
+    uint public buffer = uint(-1); // buffer of underlying to keep in the strat
     string public name = "Harvest Finance"; // for display purposes only
 
     modifier onlyVault {
-        require(msg.sender == address(vault));
+        require(msg.sender == address(vault), "CAN ONLY BE CALLED BY VAULT");
         _;
     }
 
     modifier onlyOwner {
-        require(msg.sender == vault.owner()); // vault owner is strat owner
+        require(msg.sender == vault.owner(), "CAN ONLY BE CALLED BY OWNER"); // vault owner is strat owner
+        _;
+    }
+
+    modifier onlyStrategist {
+        require(msg.sender == strategist || msg.sender == vault.owner(), "CAN ONLY BE CALLED BY STRATEGIST");
         _;
     }
 
     constructor(IVault vault_, IFToken fToken_) {
+        require(address(vault_.underlying()) == fToken_.underlying(),"VAULT / TOKEN UNDERLYING MISMATCH");
         vault = vault_;
         fToken = fToken_;
         timelock = Timelock(vault.timelock()); // use the same timelock from the vault
@@ -97,18 +104,18 @@ contract FTokenStrat is IStrat {
     }
 
     // Any tokens (other than the fToken and underlying) that are sent here by mistake are recoverable by the vault owner
-    function sweep(address _token, address _to) public onlyOwner {
+    function sweep(address _token, address _to) public onlyStrategist {
         require(_token != address(fToken) && _token != address(underlying));
         IERC20(_token).safeTransfer(_to, IERC20(_token).balanceOf(address(this)));
     }
 
     // Bypasses withdrawal cap. Should be used with care. Can cause Yearn slippage with large amounts.
-    function withdrawShares(uint shares) public onlyOwner {
+    function withdrawShares(uint shares) public onlyStrategist {
         fToken.withdraw(shares);
     }
 
     // Bypasses withdrawal cap. Should be used with care. Can cause Yearn slippage with large amounts.
-    function withdrawUnderlying(uint amount) public onlyOwner {
+    function withdrawUnderlying(uint amount) public onlyStrategist {
         fToken.withdraw(sharesForAmount(amount));
     }
 
@@ -117,27 +124,31 @@ contract FTokenStrat is IStrat {
         fToken.withdraw();
     }
 
-    function depositUnderlying(uint amount) public onlyOwner {
+    function depositUnderlying(uint amount) public onlyStrategist {
         fToken.deposit(amount);
     }
 
-    function depositAll() public onlyOwner {
+    function depositAll() public onlyStrategist {
         fToken.deposit(underlying.balanceOf(address(this)));
     }
 
-    // set buffer to -1 to pause deposits to yearn. 0 to remove buffer.
-    function setBuffer(uint _buffer) public onlyOwner {
+    // set buffer to -1 to pause deposits. 0 to remove buffer.
+    function setBuffer(uint _buffer) public onlyStrategist {
         buffer = _buffer;
     }
 
     // set to -1 for no cap
-    function setWithdrawalCap(uint underlyingCap) public onlyOwner {
+    function setWithdrawalCap(uint underlyingCap) public onlyStrategist {
         require(underlyingCap >= minWithdrawalCap);
         withdrawalCap = underlyingCap;
     }
 
     function sharesForAmount(uint amount) internal view returns (uint) {
         return amount.mul(fToken.totalSupply()).div(fToken.underlyingBalanceInVault());
+    }
+
+    function setStrategist(address _newStrategist) public onlyOwner {
+        strategist = _newStrategist;
     }
 
 }
