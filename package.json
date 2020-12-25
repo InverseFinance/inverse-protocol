@@ -4,11 +4,11 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "lint": "yarn lint-contracts && yarn lint-js",
+    "lint": "yarn lint:contracts && yarn lint:js",
     "test": "./node_modules/.bin/hardhat test",
     "compile": "./node_modules/.bin/hardhat compile --force",
-    "lint-contracts": "./node_modules/solhint/solhint.js 'contracts/**/*.sol'",
-    "lint-js": "./node_modules/eslint/bin/eslint.js '**/*.js'"
+    "lint:contracts": "./node_modules/solhint/solhint.js 'contracts/**/*.sol'",
+    "lint:js": "./node_modules/eslint/bin/eslint.js '**/*.js'"
   },
   "repository": {
     "type": "git",
