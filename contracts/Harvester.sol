@@ -18,7 +18,7 @@ contract UniswapHarvester is Ownable {
         IERC20Detailed from = vault.underlying();
         IERC20 to = vault.target();
         from.approve(address(router), afterFee);
-        uint received = router.swapExactTokensForTokens(afterFee, outMin, path, address(this), deadline)[1];
+        uint received = router.swapExactTokensForTokens(afterFee, outMin, path, address(this), deadline)[path.length-1];
         to.approve(address(vault), received);
         vault.distribute(received);
     }

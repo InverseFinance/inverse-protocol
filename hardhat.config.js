@@ -1,4 +1,4 @@
-const { task, ethers } = require('hardhat/config')
+const { task } = require('hardhat/config')
 
 require('@nomiclabs/hardhat-etherscan')
 require('@nomiclabs/hardhat-waffle')
@@ -77,7 +77,10 @@ task('harvest', 'Harvest a vault')
     if(targetAddress.toLowerCase() !== weth.toLowerCase()) {
       path = [underlyingAddress, weth, targetAddress]
     }
-    const tx = await harvester.harvestVault(args.vault, args.amount, 0, path, deadline)
+    const estimate = await harvester.estimateGas.harvestVault(args.vault, args.amount, 0, path, deadline)
+    const tx = await harvester.harvestVault(args.vault, args.amount, 0, path, deadline, {
+      gasLimit: Math.max(estimate, 2000000)
+    })
     console.log(tx.hash)
   })
 
