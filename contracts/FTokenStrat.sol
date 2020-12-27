@@ -47,6 +47,11 @@ contract FTokenStrat is IStrat {
         _;
     }
 
+    modifier onlyTimelock {
+        require(msg.sender == address(timelock), "CAN ONLY BE CALLED BY TIMELOCK");
+        _;
+    }
+
     constructor(IVault vault_, IFToken fToken_) {
         require(address(vault_.underlying()) == fToken_.underlying(),"VAULT / TOKEN UNDERLYING MISMATCH");
         vault = vault_;
@@ -60,8 +65,7 @@ contract FTokenStrat is IStrat {
     function invest() external override onlyVault {
         uint balance = underlying.balanceOf(address(this));
         if(balance > buffer) {
-            uint max = fToken.availableToInvestOut();
-            fToken.deposit(Math.min(balance - buffer, max)); // can't underflow because of above if statement
+            fToken.deposit(balance - buffer); // can't underflow because of above if statement
         }
     }
 
@@ -69,7 +73,7 @@ contract FTokenStrat is IStrat {
         uint balance = underlying.balanceOf(address(this));
         if(balance < amount) {
             uint missingAmount = amount - balance; // can't underflow because of above it statement
-            require(missingAmount <= withdrawalCap, "Reached withdrawal cap"); // Big withdrawals can cause slippage on Yearn's side. Users must split into multiple txs
+            require(missingAmount <= withdrawalCap, "Reached withdrawal cap"); // Big withdrawals can cause slippage. Users must split into multiple txs
             fToken.withdraw(
                 Math.min(
                     sharesForAmount(missingAmount)+1, // +1 is a fix for a rounding issue
@@ -80,14 +84,14 @@ contract FTokenStrat is IStrat {
         underlying.safeTransfer(address(vault), amount);
     }
 
-    function totalFDaiDeposits() public view returns (uint) {
+    function totalFTokenDeposits() public view returns (uint) {
         return fToken.balanceOf(address(this))
                 .mul(fToken.getPricePerFullShare())
                 .div(10**fToken.decimals());
     }
 
     function calcTotalValue() external view override returns (uint) {
-        return Math.max(totalFDaiDeposits(), 1) // cannot be lower than 1 because we subtract 1 after
+        return Math.max(totalFTokenDeposits(), 1) // cannot be lower than 1 because we subtract 1 after
         .sub(1) // account for dust
         .add(underlying.balanceOf(address(this)));
     }
@@ -104,24 +108,24 @@ contract FTokenStrat is IStrat {
     }
 
     // Any tokens (other than the fToken and underlying) that are sent here by mistake are recoverable by the vault owner
-    function sweep(address _token, address _to) public onlyStrategist {
+    function sweep(address _token, address _to) public onlyOwner {
         require(_token != address(fToken) && _token != address(underlying));
         IERC20(_token).safeTransfer(_to, IERC20(_token).balanceOf(address(this)));
     }
 
-    // Bypasses withdrawal cap. Should be used with care. Can cause Yearn slippage with large amounts.
+    // Bypasses withdrawal cap. Should be used with care. Can cause slippage with large amounts.
     function withdrawShares(uint shares) public onlyStrategist {
         fToken.withdraw(shares);
     }
 
-    // Bypasses withdrawal cap. Should be used with care. Can cause Yearn slippage with large amounts.
+    // Bypasses withdrawal cap. Should be used with care. Can cause slippage with large amounts.
     function withdrawUnderlying(uint amount) public onlyStrategist {
         fToken.withdraw(sharesForAmount(amount));
     }
 
-    // Bypasses withdrawal cap. Should be used with care. Can cause Yearn slippage with large amounts.
-    function withdrawAll() public onlyOwner {
-        fToken.withdraw();
+    // Bypasses withdrawal cap. Should be used with care. Can cause slippage with large amounts.
+    function withdrawAll() public onlyStrategist {
+        fToken.withdrawAll();
     }
 
     function depositUnderlying(uint amount) public onlyStrategist {
@@ -149,6 +153,10 @@ contract FTokenStrat is IStrat {
 
     function setStrategist(address _newStrategist) public onlyOwner {
         strategist = _newStrategist;
+    }
+
+    function changeTimelock(Timelock _newTimelock) public onlyTimelock {
+        timelock = Timelock(_newTimelock);
     }
 
 }

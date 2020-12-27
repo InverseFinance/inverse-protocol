@@ -12,6 +12,8 @@ const HARVESTER = '0x7F058B17648a257ADD341aB76FeBC21794c6e118'
 const YFI_ADDRESS = '0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e'
 const DAI_BAGS = '0x079667f4f7a0B440Ad35ebd780eFd216751f0758'
 
+const INVDAO_TIMELOCK = '0xD93AC1B3D1a465e1D5ef841c141C8090f2716A16';
+
 const overrides = {
   gasPrice: ethers.utils.parseUnits('0', 'gwei')
 }
@@ -20,7 +22,14 @@ describe('harvest finance strategy experiments', function () {
   let strat, vault, dai, weth
 
   it('Should deploy DAI -> YFI Vault', async function () {
-    const Vault = await ethers.getContractFactory('Vault')
+    await hre.network.provider.request({
+      method: 'hardhat_impersonateAccount',
+      params: [INVERSE_DEPLOYER]
+    }
+    )
+    const signer = await ethers.provider.getSigner(INVERSE_DEPLOYER)
+    let Vault = await ethers.getContractFactory('Vault')
+    Vault = Vault.connect(signer)
     vault = await Vault.deploy(DAI, YFI_ADDRESS, HARVESTER, 'HARVESTFI: DAI to YFI Vault', 'testDAI>ETH')
 
     await vault.deployed()
@@ -61,5 +70,45 @@ describe('harvest finance strategy experiments', function () {
     await vault.deposit(ethers.utils.parseEther('1000'))
 
     expect(await vault.balanceOf(await signer.getAddress())).to.equal(ethers.utils.parseUnits('1000'))
+  })
+
+  it('Should only update timelock from timelock', async function () {
+    await hre.network.provider.request({
+      method: 'hardhat_impersonateAccount',
+      params: [INVERSE_DEPLOYER]
+    }
+    )
+
+    const signer = await ethers.provider.getSigner(INVERSE_DEPLOYER)
+    attempt = strat.connect(signer)
+
+    await expect(
+      attempt.changeTimelock(INVDAO_TIMELOCK)
+    ).to.be.revertedWith("CAN ONLY BE CALLED BY TIMELOCK");
+
+    const timelockAddress = await strat.timelock()
+
+    timelock = await ethers.getContractAt('contracts/Timelock.sol:Timelock', timelockAddress)
+    admin = timelock.connect(signer)
+
+    const currentBlock = await ethers.provider.getBlockNumber()
+    const block = await ethers.provider.getBlock(currentBlock)
+
+    const timestamp = block.timestamp + 178800
+    const payload = ethers.utils.hexZeroPad(INVDAO_TIMELOCK, 32)
+    const stratAddress = await vault.strat()
+
+    await admin.queueTransaction(stratAddress, 0, "changeTimelock(address)", payload, timestamp)
+
+    const future = timestamp + 1000
+    await hre.network.provider.request({
+      method: 'evm_setNextBlockTimestamp',
+      params: [future]
+    }
+    )
+
+    tx = await admin.executeTransaction(stratAddress, 0, "changeTimelock(address)", payload, timestamp)
+
+    expect(await strat.timelock()).to.equal(INVDAO_TIMELOCK)
   })
 })

@@ -6,8 +6,7 @@ interface IFToken {
     function getPricePerFullShare() external view returns (uint);
     function deposit(uint amount) external returns (uint);
     function withdraw(uint shares) external returns (uint);
-    function withdraw() external returns (uint);
-    function token() external returns (address);
+    function withdrawAll() external returns (uint);
     function underlying() external returns (address);
     function underlyingBalanceInVault() external view returns (uint);
     function totalSupply() external view returns (uint);
