@@ -111,4 +111,26 @@ describe('harvest finance strategy experiments', function () {
 
     expect(await strat.timelock()).to.equal(INVDAO_TIMELOCK)
   })
+
+  it('Should withdraw (DAI)', async function () {
+    await hre.network.provider.request({
+      method: 'hardhat_impersonateAccount',
+      params: [DAI_BAGS]
+    }
+    )
+    const signer = await ethers.provider.getSigner(DAI_BAGS)
+    strat = strat.connect(signer)
+
+    vault = vault.connect(signer)
+    dai = (await ethers.getContractAt('IERC20', DAI)).connect(signer)
+    const balance = await vault.balanceOf(await signer.getAddress())
+
+    const oldBalance = await dai.balanceOf(DAI_BAGS)
+
+    const tx = await vault.withdraw(ethers.utils.parseEther('1000'))
+
+    const newBalance = await dai.balanceOf(DAI_BAGS)
+
+    expect(newBalance.sub(oldBalance)).to.equal(balance)
+  })
 })
