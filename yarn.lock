@@ -817,6 +817,10 @@
     "@types/bn.js" "*"
     "@types/underscore" "*"
 
+"@uniswap/merkle-distributor@git://github.com/Uniswap/merkle-distributor.git#c3255bfa2b684594ecd562cacd7664b0f18330bf":
+  version "1.0.1"
+  resolved "git://github.com/Uniswap/merkle-distributor.git#c3255bfa2b684594ecd562cacd7664b0f18330bf"
+
 "@yarnpkg/lockfile@^1.1.0":
   version "1.1.0"
   resolved "https://registry.npmjs.org/@yarnpkg/lockfile/-/lockfile-1.1.0.tgz"
@@ -4182,7 +4186,7 @@ har-validator@~5.1.3:
 
 hardhat@^2.0.6:
   version "2.0.6"
-  resolved "https://registry.yarnpkg.com/hardhat/-/hardhat-2.0.6.tgz#51f161e00b3c03f03fbf32027009d0ca50ad56db"
+  resolved "https://registry.npmjs.org/hardhat/-/hardhat-2.0.6.tgz"
   integrity sha512-wFTamcSUBMGwpgFxWu7ptg5o07FQyr8Ce8072rzE+QjpwM0uD3GRdhlqn+O1w+awQZ7AhK44njpAoRPUelOf/Q==
   dependencies:
     "@nomiclabs/ethereumjs-vm" "^4.1.1"
