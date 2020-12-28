@@ -1,5 +1,5 @@
 const hre = require('hardhat')
-const { describe, it } = require('mocha')
+const { describe, it, beforeEach } = require('mocha')
 const { ethers } = require('hardhat')
 const { expect } = require('chai')
 
@@ -14,87 +14,114 @@ const DAI_BAGS = '0x079667f4f7a0B440Ad35ebd780eFd216751f0758'
 
 const INVDAO_TIMELOCK = '0xD93AC1B3D1a465e1D5ef841c141C8090f2716A16';
 
-const overrides = {
-  gasPrice: ethers.utils.parseUnits('0', 'gwei')
-}
+const overrides = { gasPrice: ethers.utils.parseUnits('0', 'gwei') }
+describe('harvest finance setup', () => {
+  let vault, strat;
 
-describe('harvest finance strategy experiments', function () {
-  let strat, vault, dai, weth
-
-  it('Should deploy DAI -> YFI Vault', async function () {
+  it('Should deploy DAI -> YFI Vault', async () => {
     await hre.network.provider.request({
       method: 'hardhat_impersonateAccount',
       params: [INVERSE_DEPLOYER]
-    }
-    )
+    })
     const signer = await ethers.provider.getSigner(INVERSE_DEPLOYER)
-    let Vault = await ethers.getContractFactory('Vault')
-    Vault = Vault.connect(signer)
+    const Vault = (await ethers.getContractFactory('Vault')).connect(signer)
     vault = await Vault.deploy(DAI, YFI_ADDRESS, HARVESTER, 'HARVESTFI: DAI to YFI Vault', 'testDAI>ETH')
-
     await vault.deployed()
   })
 
-  it('Should deploy fToken strat and connect to Vault', async function () {
+  it('Should deploy fToken strat and connect to Vault', async () => {
     await hre.network.provider.request({
       method: 'hardhat_impersonateAccount',
       params: [INVERSE_DEPLOYER]
-    }
-    )
-
+    })
     const signer = await ethers.provider.getSigner(INVERSE_DEPLOYER)
-    let Strat = await ethers.getContractFactory('FTokenStrat')
-    Strat = Strat.connect(signer)
+    const Strat = (await ethers.getContractFactory('FTokenStrat')).connect(signer)
     strat = await Strat.deploy(vault.address, FDAI, overrides)
-
     await strat.deployed()
     await vault.setStrat(strat.address, false)
-
     expect(await vault.strat()).to.equal(strat.address)
     expect(await vault.paused()).to.equal(false)
   })
+})
 
-  it('Should deposit (DAI)', async function () {
-    await hre.network.provider.request({
-      method: 'hardhat_impersonateAccount',
-      params: [DAI_BAGS]
-    }
-    )
-    const signer = await ethers.provider.getSigner(DAI_BAGS)
-    strat = strat.connect(signer)
+describe('harvest finance strategy experiments', () => {
+  let vault, strat;
 
-    vault = vault.connect(signer)
-    dai = (await ethers.getContractAt('IERC20', DAI)).connect(signer)
-
-    await dai.approve(vault.address, ethers.utils.parseEther('1000'))
-    await vault.deposit(ethers.utils.parseEther('1000'))
-
-    expect(await vault.balanceOf(await signer.getAddress())).to.equal(ethers.utils.parseUnits('1000'))
-  })
-
-  it('Should only update timelock from timelock', async function () {
+  beforeEach(async () => {
     await hre.network.provider.request({
       method: 'hardhat_impersonateAccount',
       params: [INVERSE_DEPLOYER]
-    }
-    )
+    })
 
     const signer = await ethers.provider.getSigner(INVERSE_DEPLOYER)
-    attempt = strat.connect(signer)
+
+    const Vault = (await ethers.getContractFactory('Vault')).connect(signer)
+    vault = await Vault.deploy(DAI, YFI_ADDRESS, HARVESTER, 'HARVESTFI: DAI to YFI Vault', 'testDAI>ETH')
+    await vault.deployed()
+
+    const Strat = (await ethers.getContractFactory('FTokenStrat')).connect(signer)
+    strat = await Strat.deploy(vault.address, FDAI, overrides)
+    await strat.deployed()
+    await vault.setStrat(strat.address, false)
+  })
+
+  it('Should deposit (DAI)', async () => {
+    await hre.network.provider.request({
+      method: 'hardhat_impersonateAccount',
+      params: [DAI_BAGS]
+    })
+    const amount = ethers.utils.parseEther('1000')
+    const signer = await ethers.provider.getSigner(DAI_BAGS)
+    const dai = (await ethers.getContractAt('IERC20', DAI)).connect(signer)
+    const signedVault = vault.connect(signer)
+
+    await dai.approve(signedVault.address, amount)
+    await signedVault.deposit(amount)
+    expect(await signedVault.balanceOf(await signer.getAddress())).to.equal(amount)
+  })
+
+  it('Should deposit then withdraw (DAI)', async () => {
+    await hre.network.provider.request({
+      method: 'hardhat_impersonateAccount',
+      params: [DAI_BAGS]
+    })
+    const amount = ethers.utils.parseEther('1000')
+    const signer = await ethers.provider.getSigner(DAI_BAGS)
+    const dai = (await ethers.getContractAt('IERC20', DAI)).connect(signer)
+    const signedVault = vault.connect(signer)
+
+    await dai.approve(signedVault.address, amount)
+    await signedVault.deposit(amount)
+    expect(await signedVault.balanceOf(await signer.getAddress())).to.equal(amount)
+
+    const balance = await signedVault.balanceOf(await signer.getAddress())
+    const oldBalance = await dai.balanceOf(DAI_BAGS)
+    const tx = await signedVault.withdraw(amount)
+    const newBalance = await dai.balanceOf(DAI_BAGS)
+    expect(newBalance.sub(oldBalance)).to.equal(balance)
+  })
+
+  it('Should only update timelock from timelock', async () => {
+    await hre.network.provider.request({
+      method: 'hardhat_impersonateAccount',
+      params: [INVERSE_DEPLOYER]
+    })
+    const TIMELOCK_THRESHOLD = 178800 // ~2 days to satifiy timelock
+    const signer = await ethers.provider.getSigner(INVERSE_DEPLOYER)
+    const attempt = strat.connect(signer)
 
     await expect(
       attempt.changeTimelock(INVDAO_TIMELOCK)
     ).to.be.revertedWith("CAN ONLY BE CALLED BY TIMELOCK");
 
     const timelockAddress = await strat.timelock()
-
-    timelock = await ethers.getContractAt('contracts/Timelock.sol:Timelock', timelockAddress)
-    admin = timelock.connect(signer)
+    const timelock = await ethers.getContractAt('contracts/Timelock.sol:Timelock', timelockAddress)
+    const admin = timelock.connect(signer)
 
     const currentBlock = await ethers.provider.getBlockNumber()
     const block = await ethers.provider.getBlock(currentBlock)
 
-    const timestamp = block.timestamp + 178800
+    const timestamp = block.timestamp + TIMELOCK_THRESHOLD
     const payload = ethers.utils.hexZeroPad(INVDAO_TIMELOCK, 32)
     const stratAddress = await vault.strat()
 
@@ -104,33 +131,9 @@ describe('harvest finance strategy experiments', function () {
     await hre.network.provider.request({
       method: 'evm_setNextBlockTimestamp',
       params: [future]
-    }
-    )
+    })
 
-    tx = await admin.executeTransaction(stratAddress, 0, "changeTimelock(address)", payload, timestamp)
-
+    const tx = await admin.executeTransaction(stratAddress, 0, "changeTimelock(address)", payload, timestamp)
     expect(await strat.timelock()).to.equal(INVDAO_TIMELOCK)
-  })
-
-  it('Should withdraw (DAI)', async function () {
-    await hre.network.provider.request({
-      method: 'hardhat_impersonateAccount',
-      params: [DAI_BAGS]
-    }
-    )
-    const signer = await ethers.provider.getSigner(DAI_BAGS)
-    strat = strat.connect(signer)
-
-    vault = vault.connect(signer)
-    dai = (await ethers.getContractAt('IERC20', DAI)).connect(signer)
-    const balance = await vault.balanceOf(await signer.getAddress())
-
-    const oldBalance = await dai.balanceOf(DAI_BAGS)
-
-    const tx = await vault.withdraw(ethers.utils.parseEther('1000'))
-
-    const newBalance = await dai.balanceOf(DAI_BAGS)
-
-    expect(newBalance.sub(oldBalance)).to.equal(balance)
   })
 })
