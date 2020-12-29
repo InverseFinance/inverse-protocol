@@ -56,7 +56,10 @@ describe('test in prod', function () {
   })
 
   it('Should harvest', async function () {
-    const future = Math.ceil((Date.now() / 1000) + 200000)
+    const currentBlock = await ethers.provider.getBlockNumber()
+    const block = await ethers.provider.getBlock(currentBlock)
+    const future = block.timestamp + 178800
+
     await hre.network.provider.request({
       method: 'evm_setNextBlockTimestamp',
       params: [future]

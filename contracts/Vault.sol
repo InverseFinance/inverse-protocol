@@ -67,6 +67,11 @@ contract Vault is Ownable, Pausable, DividendToken {
     function claim() public {
         withdrawDividend(msg.sender);
     }
+    
+    function exit() public {
+        withdraw(balanceOf(msg.sender));
+        claim();
+    }
 
     // Used to claim on behalf of certain contracts e.g. Uniswap pool
     function claimOnBehalf(address recipient) public {
