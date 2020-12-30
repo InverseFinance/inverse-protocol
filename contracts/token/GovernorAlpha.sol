@@ -14,7 +14,7 @@ contract GovernorAlpha {
     function proposalThreshold() public pure returns (uint) { return 1000e18; } // 1% of INV
 
     /// @notice The maximum number of actions that can be included in a proposal
-    function proposalMaxOperations() public pure returns (uint) { return 10; } // 10 actions
+    function proposalMaxOperations() public pure returns (uint) { return 20; } // 10 actions
 
     /// @notice The delay before voting on a proposal may take place, once proposed
     function votingDelay() public pure returns (uint) { return 1; } // 1 block
@@ -127,7 +127,7 @@ contract GovernorAlpha {
     event ProposalExecuted(uint id);
 
     constructor(address inv_) public {
-        timelock = new Timelock(msg.sender, 2 days);
+        timelock = new Timelock(address(this), 2 days);
         inv = InvInterface(inv_);
     }
 
@@ -187,12 +187,12 @@ contract GovernorAlpha {
         timelock.queueTransaction(target, value, signature, data, eta);
     }
 
-    function execute(uint proposalId) public payable {
+    function execute(uint proposalId) public {
         require(state(proposalId) == ProposalState.Queued, "GovernorAlpha::execute: proposal can only be executed if it is queued");
         Proposal storage proposal = proposals[proposalId];
         proposal.executed = true;
         for (uint i = 0; i < proposal.targets.length; i++) {
-            timelock.executeTransaction.value(proposal.values[i])(proposal.targets[i], proposal.values[i], proposal.signatures[i], proposal.calldatas[i], proposal.eta);
+            timelock.executeTransaction(proposal.targets[i], proposal.values[i], proposal.signatures[i], proposal.calldatas[i], proposal.eta);
         }
         emit ProposalExecuted(proposalId);
     }

@@ -1,6 +1,7 @@
 {
     "rinkeby":{
         "inv":"0xA11f04EFa86C3b32680dC9C2b9D43889E2B8136c",
+        "governor":"0x7aC5048dcD9a0C31Bb4D539deFdc2af0E0486753",
         "distributor":"0xC3C93338683DDc222A62AB8026ddE630C141e532",
         "weth":"0xc778417e063141139fce010982780140aa0cd5ab",
         "dai":"0x5592ec0cfb4dbc12d3ab100b257153436a1f0fea",
@@ -26,7 +27,8 @@
         "inv":"0x41D5D79431A913C4aE7d69a668ecdfE5fF9DFB68",
         "distributor":"0xE810281D189F19572b5250556369c39F5ebC",
         "multiDelegator":"0xdb09CaFCEB041217296C22E07c16b28980A72E27",
-        "governor":"0x260AC708a95B10715d8BCd2f335196Fd354534B1",
+        "governor":"0x35d9f4953748b318f18c30634bA299b237eeDfff",
+        "timelock":"0x926dF14a23BE491164dCF93f4c468A50ef659D5B",
         "staking":"0x96ad308Cb4479FD2558D40A4ABF420565FA80356"
     }
 }
