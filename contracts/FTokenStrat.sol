@@ -12,6 +12,7 @@ pragma solidity 0.7.3;
 import "./IStrat.sol";
 import "./IFToken.sol";
 import "./IVault.sol";
+import "./IRewardPool.sol";
 import "./Timelock.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
@@ -22,9 +23,12 @@ contract FTokenStrat is IStrat {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
     using SafeERC20 for IERC20Detailed;
+    using SafeERC20 for IRewardPool;
     IVault public vault;
     IFToken public fToken;
     IERC20Detailed public underlying;
+    IRewardPool public rewardpool;
+    IERC20Detailed public rewardtoken;
     Timelock public timelock;
     address public strategist;  //strategy administrator
     uint public immutable minWithdrawalCap; // prevents the owner from completely blocking withdrawals
@@ -52,21 +56,31 @@ contract FTokenStrat is IStrat {
         _;
     }
 
-    constructor(IVault vault_, IFToken fToken_) {
+    constructor(IVault vault_, IFToken fToken_, IRewardPool rewardpool_) {
         require(address(vault_.underlying()) == fToken_.underlying(),"VAULT / TOKEN UNDERLYING MISMATCH");
         vault = vault_;
         fToken = fToken_;
+        rewardpool = rewardpool_;
+        rewardtoken = IERC20Detailed(rewardpool.rewardToken());
         timelock = Timelock(vault.timelock()); // use the same timelock from the vault
         underlying = IERC20Detailed(fToken_.underlying());
         underlying.safeApprove(address(fToken), uint(-1)); // intentional underflow
+        fToken.approve(address(rewardpool), uint(-1));
+
         minWithdrawalCap = 1000 * (10 ** underlying.decimals()); // 10k min withdrawal cap
     }
 
     function invest() external override onlyVault {
         uint balance = underlying.balanceOf(address(this));
+
         if(balance > buffer) {
-            fToken.deposit(balance - buffer); // can't underflow because of above if statement
+            fToken.deposit(balance - buffer);
+
+            uint ftokenBalance = fToken.underlyingBalanceWithInvestmentForHolder(address(this));
+            rewardpool.stake(ftokenBalance - buffer);
+
         }
+
     }
 
     function divest(uint amount) external override onlyVault {
@@ -81,6 +95,9 @@ contract FTokenStrat is IStrat {
                 )
             );
         }
+
+        rewardpool.exit();
+
         underlying.safeTransfer(address(vault), amount);
     }
 
@@ -88,6 +105,10 @@ contract FTokenStrat is IStrat {
         return fToken.balanceOf(address(this))
                 .mul(fToken.getPricePerFullShare())
                 .div(10**fToken.decimals());
+    }
+
+    function totalRewardTokenPending() public returns (uint) {
+        return rewardpool.rewards(address(this));
     }
 
     function calcTotalValue() external view override returns (uint) {
@@ -157,6 +178,11 @@ contract FTokenStrat is IStrat {
 
     function changeTimelock(Timelock _newTimelock) public onlyTimelock {
         timelock = Timelock(_newTimelock);
+    }
+
+    function changeRewardPool(IRewardPool _newRewardPool ) public onlyStrategist {
+        rewardpool = _newRewardPool;
+        rewardtoken = IERC20Detailed(rewardpool.rewardToken());
     }
 
 }
