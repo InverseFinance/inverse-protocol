@@ -28,9 +28,6 @@ contract YCreditStrat is IStrat {
 
     function invest() external override onlyVault {
         reinvest();
-        uint balance = yCredit.balanceOf(address(this));
-        require(balance > 0);
-        yCredit.stake(balance);
     }
 
     function divest(uint amount) external override onlyVault {
@@ -44,12 +41,10 @@ contract YCreditStrat is IStrat {
     }
 
     function reinvest() public {
-        uint oldBalance = yCredit.balanceOf(address(this));
         yCredit.getReward();
-        uint newBalance = yCredit.balanceOf(address(this));
-        uint reward = newBalance.sub(oldBalance);
-        if(reward > 0) {
-            yCredit.stake(reward);
+        uint balance = yCredit.balanceOf(address(this));
+        if(balance > 0) {
+            yCredit.stake(balance);
         }
     }
 
