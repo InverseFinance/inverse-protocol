@@ -96,6 +96,7 @@ contract FTokenStrat is IStrat {
 
     function totalFTokenDeposits() public view returns (uint) {
         return fToken.balanceOf(address(this))
+                .add(rewardpool.balanceOf(address(this)))
                 .mul(fToken.getPricePerFullShare())
                 .div(10**fToken.decimals());
     }
