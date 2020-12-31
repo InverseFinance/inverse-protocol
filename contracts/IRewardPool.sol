@@ -9,4 +9,5 @@ interface IRewardPool {
     function earned(address user) external view returns (uint);
     function rewardToken() external returns (address);
     function rewards(address user) external returns (uint);
+    function getReward() external;
 }

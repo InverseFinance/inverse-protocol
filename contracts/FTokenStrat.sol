@@ -1,18 +1,11 @@
 //SPDX-License-Identifier: Unlicense
-/*
-harvest finance strategy
-prox:         0xab7fa2b2985bccfc13c6d86b1d5a17486ab1e04c
-current_imp:  0x9b3be0cc5dd26fd0254088d03d8206792715588b
-fDAI:         0xe85c8581e60d7cd32bbfd86303d2a4fa6a951dac
-
-*/
 
 pragma solidity 0.7.3;
-
 import "./IStrat.sol";
 import "./IFToken.sol";
 import "./IVault.sol";
 import "./IRewardPool.sol";
+import "./IUniswapRouter.sol";
 import "./Timelock.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
@@ -29,12 +22,13 @@ contract FTokenStrat is IStrat {
     IERC20Detailed public underlying;
     IRewardPool public rewardpool;
     IERC20Detailed public rewardtoken;
+    IUniswapRouter public router;
     Timelock public timelock;
     address public strategist;  //strategy administrator
     uint public immutable minWithdrawalCap; // prevents the owner from completely blocking withdrawals
     uint public withdrawalCap = uint(-1); // max uint
     uint public buffer = uint(-1); // buffer of underlying to keep in the strat
-    string public name = "Harvest Finance"; // for display purposes only
+    string public name = "Inverse: HarvestFinance Strategy"; // for display purposes only
 
     modifier onlyVault {
         require(msg.sender == address(vault), "CAN ONLY BE CALLED BY VAULT");
@@ -56,12 +50,13 @@ contract FTokenStrat is IStrat {
         _;
     }
 
-    constructor(IVault vault_, IFToken fToken_, IRewardPool rewardpool_) {
+    constructor(IVault vault_, IFToken fToken_, IRewardPool rewardpool_, IUniswapRouter router_) {
         require(address(vault_.underlying()) == fToken_.underlying(),"VAULT / TOKEN UNDERLYING MISMATCH");
         vault = vault_;
         fToken = fToken_;
         rewardpool = rewardpool_;
         rewardtoken = IERC20Detailed(rewardpool.rewardToken());
+        router = router_;
         timelock = Timelock(vault.timelock()); // use the same timelock from the vault
         underlying = IERC20Detailed(fToken_.underlying());
         underlying.safeApprove(address(fToken), uint(-1)); // intentional underflow
@@ -75,16 +70,16 @@ contract FTokenStrat is IStrat {
 
         if(balance > buffer) {
             fToken.deposit(balance - buffer);
-
-            uint ftokenBalance = fToken.underlyingBalanceWithInvestmentForHolder(address(this));
-            rewardpool.stake(ftokenBalance - buffer);
-
+            uint ftokenBalance = fToken.balanceOf(address(this));
+            rewardpool.stake(ftokenBalance);
         }
-
     }
 
     function divest(uint amount) external override onlyVault {
+        rewardpool.getReward();
+        rewardpool.withdraw(amount);
         uint balance = underlying.balanceOf(address(this));
+
         if(balance < amount) {
             uint missingAmount = amount - balance; // can't underflow because of above it statement
             require(missingAmount <= withdrawalCap, "Reached withdrawal cap"); // Big withdrawals can cause slippage. Users must split into multiple txs
@@ -95,8 +90,6 @@ contract FTokenStrat is IStrat {
                 )
             );
         }
-
-        rewardpool.exit();
 
         underlying.safeTransfer(address(vault), amount);
     }
@@ -180,9 +173,34 @@ contract FTokenStrat is IStrat {
         timelock = Timelock(_newTimelock);
     }
 
-    function changeRewardPool(IRewardPool _newRewardPool ) public onlyStrategist {
+    function changeRewardPool(IRewardPool _newRewardPool ) public onlyOwner {
+        require(buffer == uint(-1), "DEPOSITS MUST BE PAUSED");
+
+        uint transitBalance = rewardpool.balanceOf(address(this));
+        rewardpool.withdraw(transitBalance);
         rewardpool = _newRewardPool;
+        fToken.approve(address(rewardpool), uint(-1));
+
         rewardtoken = IERC20Detailed(rewardpool.rewardToken());
+        rewardtoken.safeApprove(address(rewardpool), uint(-1));
+        _newRewardPool.stake(transitBalance);
+    }
+
+    function harvestRewardToken(uint outMin, address[] calldata path, uint deadline) public onlyStrategist returns (uint) {
+        uint received = 0;
+        uint rewardTokenBalance = rewardtoken.balanceOf(address(this));
+        if(rewardTokenBalance > uint(0)){
+          IERC20 to = vault.underlying();
+          rewardtoken.approve(address(router), rewardTokenBalance);
+          uint[] memory amounts = router.swapExactTokensForTokens(rewardTokenBalance, outMin, path, address(this), deadline);
+          received = amounts[amounts.length -1];
+
+          to.approve(address(vault), received);
+
+          //distribute must be called by harvester... hmmm
+          //vault.distribute(received);
+        }
+        return received;
     }
 
 }
