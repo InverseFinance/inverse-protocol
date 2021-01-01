@@ -14,6 +14,7 @@ contract YCreditStrat is IStrat {
     IVault public vault;
     IYCredit public yCredit;
     Timelock public timelock;
+    string public name = "yCredit Compounded Staking";
 
     modifier onlyVault {
         require(msg.sender == address(vault));
