@@ -17,8 +17,8 @@ contract UniswapHarvester is Ownable {
     function harvestVault(IVault vault, uint amount, uint outMin, address[] calldata path, uint deadline) public onlyOwner {
         uint afterFee = vault.harvest(amount);
         uint durationSinceLastHarvest = block.timestamp.sub(vault.lastDistribution());
-        ratePerToken[vault] = afterFee.div(vault.totalSupply()).div(durationSinceLastHarvest);
         IERC20Detailed from = vault.underlying();
+        ratePerToken[vault] = afterFee.mul(10**from.decimals()).div(vault.totalSupply()).div(durationSinceLastHarvest);
         IERC20 to = vault.target();
         from.approve(address(router), afterFee);
         uint received = router.swapExactTokensForTokens(afterFee, outMin, path, address(this), deadline)[path.length-1];
