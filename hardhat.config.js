@@ -1,4 +1,3 @@
-const { ethers } = require('ethers')
 const { task } = require('hardhat/config')
 
 require('@nomiclabs/hardhat-etherscan')
