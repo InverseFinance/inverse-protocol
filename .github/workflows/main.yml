@@ -9,6 +9,7 @@ on:
 jobs:
   harvest:
     runs-on: ubuntu-latest
+    environment: Harvester
     env: 
       MAINNET_PRIVKEY: ${{ secrets.HARVESTER }}
       ALCHEMY_KEY: ${{ secrets.ALCHEMY_KEY }}
