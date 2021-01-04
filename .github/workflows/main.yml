@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     env: 
       MAINNET_PRIVKEY: ${{ secrets.HARVESTER }}
+      ALCHEMY_KEY: ${{ secrets.ALCHEMY_KEY }}
     steps:
       - uses: actions/checkout@v2
 
