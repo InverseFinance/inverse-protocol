@@ -1,13 +1,14 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity 0.7.3;
-
+import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./IVault.sol";
 import "./IUniswapRouter.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract UniswapHarvester is Ownable {
-
+    using SafeMath for uint256;
     IUniswapRouter public router;
+    mapping (IVault => uint) public ratePerToken;
 
     constructor(IUniswapRouter router_) {
         router = router_;
@@ -15,6 +16,8 @@ contract UniswapHarvester is Ownable {
 
     function harvestVault(IVault vault, uint amount, uint outMin, address[] calldata path, uint deadline) public onlyOwner {
         uint afterFee = vault.harvest(amount);
+        uint durationSinceLastHarvest = block.timestamp.sub(vault.lastDistribution());
+        ratePerToken[vault] = afterFee.div(vault.totalSupply()).div(durationSinceLastHarvest);
         IERC20Detailed from = vault.underlying();
         IERC20 to = vault.target();
         from.approve(address(router), afterFee);
