@@ -30,6 +30,10 @@ contract FTokenStrat is IStrat {
     uint public buffer = uint(-1); // buffer of underlying to keep in the strat
     string public name = "Inverse: HarvestFinance Strategy"; // for display purposes only
 
+    event Invested(uint block, uint amount);
+    event Divested(uint block, uint amount);
+    event RewardTokenHarvested(uint block, uint harvested);
+
     modifier onlyVault {
         require(msg.sender == address(vault), "CAN ONLY BE CALLED BY VAULT");
         _;
@@ -72,16 +76,17 @@ contract FTokenStrat is IStrat {
             fToken.deposit(balance - buffer);
             uint ftokenBalance = fToken.balanceOf(address(this));
             rewardpool.stake(ftokenBalance);
+            emit Invested(block.number, balance - buffer);
         }
     }
 
     function divest(uint amount) external override onlyVault {
+        uint fTokenAmount = amount.div(fToken.getPricePerFullShare()).mul(10**fToken.decimals());
         rewardpool.getReward();
-        rewardpool.withdraw(amount);
+        rewardpool.withdraw(fTokenAmount);
         uint balance = underlying.balanceOf(address(this));
-
-        if(balance < amount) {
-            uint missingAmount = amount - balance; // can't underflow because of above it statement
+        if(balance < fTokenAmount) {
+            uint missingAmount = fTokenAmount - balance; // can't underflow because of above it statement
             require(missingAmount <= withdrawalCap, "Reached withdrawal cap"); // Big withdrawals can cause slippage. Users must split into multiple txs
             fToken.withdraw(
                 Math.min(
@@ -92,6 +97,7 @@ contract FTokenStrat is IStrat {
         }
 
         underlying.safeTransfer(address(vault), amount);
+        emit Divested(block.number, amount);
     }
 
     function totalFTokenDeposits() public view returns (uint) {
@@ -197,11 +203,10 @@ contract FTokenStrat is IStrat {
           received = amounts[amounts.length -1];
 
           to.approve(address(vault), received);
-
-          //distribute must be called by harvester... hmmm
-          //vault.distribute(received);
+          underlying.safeTransfer(address(vault), received);
         }
-        return received;
+
+        emit RewardTokenHarvested(block.number, received);
     }
 
 }
