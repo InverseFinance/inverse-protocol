@@ -196,9 +196,9 @@ describe('harvest finance strategy experiments', function () {
     const block = await ethers.provider.getBlock(currentBlock)
     const deadline = block.timestamp + 1000
 
-    const oldBalance = await dai.balanceOf(vault.address)
+    const oldBalance = await dai.balanceOf(strat.address)
     const harvested = await strat.harvestRewardToken(outmin, path, deadline, overrides)
-    const newBalance = await dai.balanceOf(vault.address)
+    const newBalance = await dai.balanceOf(strat.address)
     const balanceDelta = newBalance - oldBalance
     expect(balanceDelta).to.gt(0)
 

@@ -7,7 +7,7 @@ interface IRewardPool {
     function withdraw(uint amount) external;
     function balanceOf(address user) external view returns (uint);
     function earned(address user) external view returns (uint);
-    function rewardToken() external returns (address);
-    function rewards(address user) external returns (uint);
+    function rewardToken() external view returns (address);
+    function rewards(address user) external view returns (uint);
     function getReward() external;
 }

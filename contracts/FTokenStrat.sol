@@ -28,7 +28,7 @@ contract FTokenStrat is IStrat {
     uint public immutable minWithdrawalCap; // prevents the owner from completely blocking withdrawals
     uint public withdrawalCap = uint(-1); // max uint
     uint public buffer = uint(-1); // buffer of underlying to keep in the strat
-    string public name = "Inverse: HarvestFinance Strategy"; // for display purposes only
+    string public name = "Harvest Finance Staking"; // for display purposes only
 
     event Invested(uint block, uint amount);
     event Divested(uint block, uint amount);
@@ -45,7 +45,7 @@ contract FTokenStrat is IStrat {
     }
 
     modifier onlyStrategist {
-        require(msg.sender == strategist || msg.sender == vault.owner(), "CAN ONLY BE CALLED BY STRATEGIST");
+        require(msg.sender == strategist || msg.sender == vault.owner(), "CAN ONLY BE CALLED BY STRATEGIST OR OWNER");
         _;
     }
 
@@ -82,7 +82,6 @@ contract FTokenStrat is IStrat {
 
     function divest(uint amount) external override onlyVault {
         uint fTokenAmount = amount.div(fToken.getPricePerFullShare()).mul(10**fToken.decimals());
-        rewardpool.getReward();
         rewardpool.withdraw(fTokenAmount);
         uint balance = underlying.balanceOf(address(this));
         if(balance < fTokenAmount) {
@@ -107,7 +106,7 @@ contract FTokenStrat is IStrat {
                 .div(10**fToken.decimals());
     }
 
-    function totalRewardTokenPending() public returns (uint) {
+    function totalRewardTokenPending() public view returns (uint) {
         return rewardpool.rewards(address(this));
     }
 
@@ -130,7 +129,7 @@ contract FTokenStrat is IStrat {
 
     // Any tokens (other than the fToken and underlying) that are sent here by mistake are recoverable by the vault owner
     function sweep(address _token, address _to) public onlyOwner {
-        require(_token != address(fToken) && _token != address(underlying));
+        require(_token != address(fToken) && _token != address(underlying) && _token != address(rewardtoken));
         IERC20(_token).safeTransfer(_to, IERC20(_token).balanceOf(address(this)));
     }
 
@@ -195,15 +194,12 @@ contract FTokenStrat is IStrat {
 
     function harvestRewardToken(uint outMin, address[] calldata path, uint deadline) public onlyStrategist returns (uint) {
         uint received = 0;
+        rewardpool.getReward();
         uint rewardTokenBalance = rewardtoken.balanceOf(address(this));
         if(rewardTokenBalance > uint(0)){
-          IERC20 to = vault.underlying();
           rewardtoken.approve(address(router), rewardTokenBalance);
           uint[] memory amounts = router.swapExactTokensForTokens(rewardTokenBalance, outMin, path, address(this), deadline);
           received = amounts[amounts.length -1];
-
-          to.approve(address(vault), received);
-          underlying.safeTransfer(address(vault), received);
         }
 
         emit RewardTokenHarvested(block.number, received);
