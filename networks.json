@@ -1,10 +1,13 @@
 {
     "rinkeby":{
+        "inv":"0xA11f04EFa86C3b32680dC9C2b9D43889E2B8136c",
+        "governor":"0x7aC5048dcD9a0C31Bb4D539deFdc2af0E0486753",
+        "distributor":"0xC3C93338683DDc222A62AB8026ddE630C141e532",
         "weth":"0xc778417e063141139fce010982780140aa0cd5ab",
         "dai":"0x5592ec0cfb4dbc12d3ab100b257153436a1f0fea",
         "cdai":"0x6d7f0754ffeb405d23c51ce938289d4835be3b14",
         "harvester":"0x6dE45B9a80847Ce6Fd53819bA31cf296Ecc346bC",
-        "dai_vault":"0xC5e43BADAb90AB57CDe5D7c201EDdaFCB03Ba8c8",
+        "eth_vault":"0xC5e43BADAb90AB57CDe5D7c201EDdaFCB03Ba8c8",
         "cdai_strat":"0x6e15C10cCF5fc329173162B5B4eFf244f94Ee8B5"
     },
     "mainnet":{
@@ -13,16 +16,19 @@
         "yfi":"0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e",
         "wbtc":"0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
         "cdai":"0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643",
-        "harvester":"0x7F058B17648a257ADD341aB76FeBC21794c6e118",
-        "wbtc_harvester":"0xc6479a77eCbd54893590d544C26Eab6647e2a259",
-        "dai_vault":"0x2dCdCA085af2E258654e47204e483127E0D8b277",
+        "harvester":"0xD3272068757340e885725113C846299EABDd84C8",
+        "eth_vault":"0x2dCdCA085af2E258654e47204e483127E0D8b277",
         "wbtc_vault":"0xc8f2E91dC9d198edEd1b2778F6f2a7fd5bBeac34",
         "yfi_vault":"0x41D079ce7282d49bf4888C71B5D9E4A02c371F9B",
         "cdai_strat":"0x42bE0F4FA30980f8261325E9C8Fc9CBd08dE9D6C",
         "wbtc_cdai_strat":"0x42b5D4A11C8Fe76D114759F7f3D8e94ea28BdBe5",
         "ydai_strat":"0xf8df8bb6A10eeC2619EbC1e384489B728B5b1C1f",
         "yfi_cdai_strat":"0xdc91f11dE8d294bD547d4F9009fa16466b2ca796",
-        "inv":"0x8805c8a08022a41fef736ea3af56dfdff282a9cb",
+        "inv":"0x41D5D79431A913C4aE7d69a668ecdfE5fF9DFB68",
+        "distributor":"0xE810281D189F19572b5250556369c39F5ebC",
+        "multiDelegator":"0xdb09CaFCEB041217296C22E07c16b28980A72E27",
+        "governor":"0x35d9f4953748b318f18c30634bA299b237eeDfff",
+        "timelock":"0x926dF14a23BE491164dCF93f4c468A50ef659D5B",
         "staking":"0x96ad308Cb4479FD2558D40A4ABF420565FA80356"
     }
 }

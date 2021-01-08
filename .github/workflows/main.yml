@@ -1,0 +1,32 @@
+name: Harvest vaults
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+
+  workflow_dispatch:
+
+jobs:
+  harvest:
+    runs-on: ubuntu-latest
+    env: 
+      MAINNET_PRIVKEY: ${{ secrets.HARVESTER }}
+      RINKEBY_PRIVKEY: ${{ secrets.HARVESTER }}
+      ALCHEMY_KEY: ${{ secrets.ALCHEMY_KEY }}
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: NPM Install
+        run: npm i
+
+      - name: Compile contracts
+        run: npx hardhat compile
+
+      - name: Harvest WBTC Vault
+        run: npx hardhat harvest --vault 0xc8f2E91dC9d198edEd1b2778F6f2a7fd5bBeac34 --network live
+
+      - name: Harvest YFI Vault
+        run: npx hardhat harvest --vault 0x41D079ce7282d49bf4888C71B5D9E4A02c371F9B --network live
+
+      - name: Harvest ETH Vault
+        run: npx hardhat harvest --vault 0x2dCdCA085af2E258654e47204e483127E0D8b277 --network live

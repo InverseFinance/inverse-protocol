@@ -1,4 +1,4 @@
-const { task, ethers } = require('hardhat/config')
+const { task } = require('hardhat/config')
 
 require('@nomiclabs/hardhat-etherscan')
 require('@nomiclabs/hardhat-waffle')
@@ -69,12 +69,23 @@ task('harvest', 'Harvest a vault')
     } else {
       args.amount = ethers.utils.parseUnits(args.amount, decimals)
     }
-    console.log('Harvesting', ethers.utils.formatUnits(args.amount, decimals))
-    const deadline = Math.ceil(Date.now() / 1000) + 3600 // 1 hour from now
-    const tx = await harvester.harvestVault(args.vault, args.amount, 0, [underlyingAddress, targetAddress], deadline, {
-      gasLimit: 2000000
-    })
-    console.log(tx.hash)
+    if(args.amount.gt(0)) {
+      console.log("Harvesting", ethers.utils.formatUnits(args.amount, decimals))
+      const deadline = Math.ceil(Date.now()/1000) + 3600 // 1 hour from now
+      let path = [underlyingAddress, targetAddress];
+      // TODO: Find best path dynamically
+      const weth = "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+      if(targetAddress.toLowerCase() !== weth.toLowerCase()) {
+        path = [underlyingAddress, weth, targetAddress]
+      }
+      const estimate = await harvester.estimateGas.harvestVault(args.vault, args.amount, 0, path, deadline)
+      const tx = await harvester.harvestVault(args.vault, args.amount, 0, path, deadline, {
+        gasLimit: Math.max(estimate, 2000000)
+      })
+      console.log(tx.hash)
+    } else {
+      console.log("Nothing to Harvest. Skipping.")
+    }
   })
 
 task('changeHarvester', 'Change a vault harvester')
@@ -116,6 +127,9 @@ module.exports = {
       },
       {
         version: '0.5.16'
+      },
+      {
+        version: '0.6.11'
       }
     ]
   }
