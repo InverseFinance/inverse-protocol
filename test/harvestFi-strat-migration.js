@@ -78,7 +78,7 @@ describe('harvest finance strategy experiments', function () {
   it('Only updates timelock from timelock', async function () {
     const signer = await ethers.provider.getSigner(INVERSE_DEPLOYER)
     const timelockAddress = await strat.timelock()
-    const timelock = await ethers.getContractAt('contracts/Timelock.sol:Timelock', timelockAddress)
+    const timelock = await ethers.getContractAt('contracts/misc/Timelock.sol:Timelock', timelockAddress)
     admin = timelock.connect(signer)
 
     const currentBlock = await ethers.provider.getBlockNumber()

@@ -4,8 +4,8 @@ pragma solidity 0.7.3;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import "./math/SafeMathUint.sol";
-import "./math/SafeMathInt.sol";
+import "../math/SafeMathUint.sol";
+import "../math/SafeMathInt.sol";
 
 /// @title Dividend-Paying Token
 /// @author Roger Wu (https://github.com/roger-wu)

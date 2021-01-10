@@ -1,10 +1,10 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity 0.7.3;
 
-import "./IStrat.sol";
+import "../strats/IStrat.sol";
 import "./IVault.sol";
 import "./DividendToken.sol";
-import "./Timelock.sol";
+import "../misc/Timelock.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 

@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity 0.7.3;
 
-import "./IVault.sol";
+import "../vault/IVault.sol";
 import "./IUniswapRouter.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 

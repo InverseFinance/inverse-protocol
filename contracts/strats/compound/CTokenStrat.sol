@@ -1,10 +1,10 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity 0.7.3;
 
-import "./IStrat.sol";
+import "../IStrat.sol";
 import "./ICToken.sol";
-import "./IVault.sol";
-import "./Timelock.sol";
+import "../../vault/IVault.sol";
+import "../../misc/Timelock.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
