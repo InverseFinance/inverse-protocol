@@ -22,11 +22,14 @@ jobs:
       - name: Compile contracts
         run: npx hardhat compile
 
-      - name: Harvest WBTC Vault
+      - name: Harvest Dai to WBTC Vault
         run: npx hardhat harvest --vault 0xc8f2E91dC9d198edEd1b2778F6f2a7fd5bBeac34 --network live
 
-      - name: Harvest YFI Vault
+      - name: Harvest Dai to YFI Vault
         run: npx hardhat harvest --vault 0x41D079ce7282d49bf4888C71B5D9E4A02c371F9B --network live
 
-      - name: Harvest ETH Vault
+      - name: Harvest Dai to ETH Vault
         run: npx hardhat harvest --vault 0x2dCdCA085af2E258654e47204e483127E0D8b277 --network live
+
+      - name: Harvest USDC to ETH Vault
+        run: npx hardhat harvest --vault 0x89eC5dF87a5186A0F0fa8Cb84EdD815de6047357 --network live
