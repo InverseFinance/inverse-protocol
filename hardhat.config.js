@@ -80,7 +80,7 @@ task('harvest', 'Harvest a vault')
       }
       const estimate = await harvester.estimateGas.harvestVault(args.vault, args.amount, 0, path, deadline)
       const tx = await harvester.harvestVault(args.vault, args.amount, 0, path, deadline, {
-        gasLimit: Math.max(estimate, 2000000)
+        gasLimit: Math.max(estimate, 1000000)
       })
       console.log(tx.hash)
     } else {
