@@ -11,8 +11,8 @@ contract EthVault is Vault {
     using SafeMath for uint256;
     using SafeERC20 for IWETH;
 
-    constructor(IERC20Detailed underlying_, IERC20 reward_, address harvester_, string memory name_, string memory symbol_)
-        Vault(underlying_, reward_, harvester_, name_, symbol_) {}
+    constructor(IERC20Detailed underlying_, IERC20 reward_, address harvester_, Timelock timelock_, string memory name_, string memory symbol_)
+        Vault(underlying_, reward_, harvester_, timelock_, name_, symbol_) {}
 
 
     receive() external payable {

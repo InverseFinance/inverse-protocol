@@ -5,6 +5,7 @@ async function main () {
   const underlying = await prompt('Enter underlying token address: ')
   const target = await prompt('Enter WETH token address: ')
   const harvester = await prompt('Enter Harvester address: ')
+  const timelock = await prompt('Enter Timelock address: ')
   const name = await prompt('Enter Vault ERC20 token name: ')
   const symbol = await prompt('Enter Vault ERC20 token symbol: ')
 
@@ -13,6 +14,7 @@ async function main () {
     underlying,
     target,
     harvester,
+    timelock,
     name,
     symbol
   )

@@ -15,7 +15,7 @@ async function main () {
 
   const vaultContract = await ethers.getContractAt('Vault', vault)
   const timelockAddress = await vaultContract.timelock()
-  const timelock = await ethers.getContractAt('Timelock', timelockAddress)
+  const timelock = await ethers.getContractAt('contracts/misc/Timelock.sol:Timelock', timelockAddress)
   const signature = 'setStrat(address,bool)'
   const abiCoder = new ethers.utils.AbiCoder()
   const data = abiCoder.encode(['address', 'bool'], [strat, force])

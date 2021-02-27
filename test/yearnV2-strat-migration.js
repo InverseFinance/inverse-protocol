@@ -28,7 +28,7 @@ describe('yearn v2 migration', function () {
     const signer = await ethers.provider.getSigner(INVERSE_DEPLOYER)
     let Strat = await ethers.getContractFactory('YTokenStrat')
     Strat = Strat.connect(signer)
-    strat = await Strat.deploy(VAULT, YDAI, overrides)
+    strat = await Strat.deploy(VAULT, YDAI, TIMELOCK, overrides)
 
     await strat.deployed()
   })
