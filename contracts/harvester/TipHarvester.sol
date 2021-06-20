@@ -29,24 +29,26 @@ contract TipHarvester is Ownable {
 
     /***
     * @notice retrieve tokens sent to contract by mistake
-    *
+    * @param token_ Token to retrieve
     */
     function collect(address token_) public onlyOwner {
         if (token_ == address(0)) {
-            payable(owner()).sendValue(address(this).balance);
+            payable(msg.sender).sendValue(address(this).balance);
         } else {
             uint256 balance = IERC20(token_).balanceOf(address(this));
-            IERC20(token_).safeTransfer(owner(), balance);
+            IERC20(token_).safeTransfer(msg.sender, balance);
         }
     }
 
     /**
     * @notice approve to spend given amount of given token
-    *
+    * @param token Approval token
+    * @param spender Address to spend token
+    * @param amount Allowance of token amount to spend 
     */
-    function _approve(IERC20 token_, address spender_, uint256 amount_) internal {
-        if (token_.allowance(address(this), spender_) < amount_) {
-            token_.safeApprove(spender_, amount_);
+    function _approve(IERC20 token, address spender, uint256 amount) internal {
+        if (token.allowance(address(this), spender) < amount) {
+            token.safeApprove(spender, amount);
         }
     }
 
@@ -78,7 +80,7 @@ contract TipHarvester is Ownable {
     /**
      * @notice set router to IUniswapRouter compatible router
      * @dev ensure router is IUniswapRouter compatible
-     *
+     * @param router_ IUniswapRouter compatible router
      */
     function setRouter(IUniswapRouter router_) public onlyOwner {
         router = router_;
@@ -86,7 +88,12 @@ contract TipHarvester is Ownable {
 
     /**
     * @notice harvest vault while tipping miner
-    * _swapExactTokensForTokens returns no amounts and therefore received amount has to be calculated
+    *         _swapExactTokensForTokens returns no amounts and therefore received amount has to be calculated
+    * @param vault Vault from which to harvest
+    * @param amount Amount to harvest
+    * @param outMin Minimum amount of tokens out
+    * @param path Token swap path
+    * @param deadline Block timestamp deadline for trade
     */
     function harvestVault(IVault vault, uint256 amount, uint256 outMin, address[] calldata path, uint256 deadline) public payable onlyOwner {
         require(msg.value > 0, "Tip Harvester: tip must be > 0");
