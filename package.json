@@ -39,6 +39,7 @@
     "@openzeppelin/contracts": "^3.3.0",
     "@uniswap/merkle-distributor": "git://github.com/Uniswap/merkle-distributor.git#c3255bfa2b684594ecd562cacd7664b0f18330bf",
     "async-prompt": "^1.0.1",
+    "axios": "^0.21.1",
     "dotenv": "^8.2.0",
     "openzeppelin-solidity-2.3.0": "npm:openzeppelin-solidity@2.3.0"
   }

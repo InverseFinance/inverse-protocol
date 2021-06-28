@@ -1,4 +1,5 @@
 const { task } = require('hardhat/config')
+const { submitArcherTransaction, getTip } = require('./src/utils')
 
 require('@nomiclabs/hardhat-etherscan')
 require('@nomiclabs/hardhat-waffle')
@@ -63,7 +64,7 @@ task('harvest', 'Harvest a vault')
     const underlyingAddress = await vault.underlying()
     const targetAddress = await vault.target()
     const decimals = await vault.decimals()
-    const harvester = await ethers.getContractAt('UniswapHarvester', await vault.harvester())
+    const tipHarvester = await ethers.getContractAt('TipHarvester', await vault.harvester())
     if (!args.amount) {
       args.amount = await vault.callStatic.underlyingYield()
     } else {
@@ -72,17 +73,34 @@ task('harvest', 'Harvest a vault')
     if(args.amount.gt(0)) {
       console.log("Harvesting", ethers.utils.formatUnits(args.amount, decimals))
       const deadline = Math.ceil(Date.now()/1000) + 3600 // 1 hour from now
-      let path = [underlyingAddress, targetAddress];
+      let path = [underlyingAddress, targetAddress]
       // TODO: Find best path dynamically
       const weth = "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
       if(targetAddress.toLowerCase() !== weth.toLowerCase()) {
         path = [underlyingAddress, weth, targetAddress]
       }
-      const estimate = await harvester.estimateGas.harvestVault(args.vault, args.amount, 0, path, deadline)
-      const tx = await harvester.harvestVault(args.vault, args.amount, 0, path, deadline, {
-        gasLimit: Math.max(estimate, 1000000)
+      const provider = ethers.getDefaultProvider()
+      const estimate = await provider.estimateGas({
+        to: tipHarvester.address,
+        data: (await tipHarvester.populateTransaction.harvestVault(args.vault, args.amount, 0, path, deadline))['data']
       })
-      console.log(tx.hash)
+      
+      const tip = await getTip('standard')
+      // creating wallet as etherssigner.signTransaction not supported
+      const privateKey = (await provider.getNetwork()).chainId == 1 ? process.env.MAINNET_PRIVKEY : process.env.RINKEBY_PRIVKEY
+      const deployer = new ethers.Wallet(privateKey, provider)
+      const nonce = await deployer.getTransactionCount()
+      const unsignedTx = await tipHarvester.populateTransaction.harvestVault(args.vault, args.amount, 0, path, deadline, {
+        gasLimit: Math.max(estimate, 1000000),
+        nonce: nonce,
+        value: tip
+      })
+      
+      // sign transaction and send to Archer DAO relay server
+      const signedTx = await deployer.signTransaction(unsignedTx)
+      const response = await submitArcherTransaction(signedTx, deadline)
+      const data = response.data;
+      console.log(`Response from Archer DAO relay, status: ${response.status}, data: ${JSON.stringify(data)}`)
     } else {
       console.log("Nothing to Harvest. Skipping.")
     }
@@ -132,5 +150,14 @@ module.exports = {
         version: '0.6.11'
       }
     ]
+  },
+  namedAccounts: {
+    tipJar: {
+      1: '0x5312B0d160E16feeeec13437a0053009e7564287',
+      4: '0x914528335B5d031c93Ac86e6F6A6C67052Eb44f0'
+    },
+    deployer: {
+      defualt: 0
+    }
   }
 }
