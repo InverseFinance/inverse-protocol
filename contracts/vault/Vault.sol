@@ -109,6 +109,11 @@ contract Vault is Ownable, Pausable, DividendToken {
         strat = strat_;
     }
 
+    function changeTimelock(Timelock timelock_) public {
+        require(msg.sender == address(timelock), "Only Timelock address can call this function");
+        timelock = timelock_;
+    }
+
     // if limit == 0 then there is no deposit limit
     function setDepositLimit(uint limit) public onlyOwner {
         depositLimit = limit;
