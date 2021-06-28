@@ -10,6 +10,7 @@ const WETH_ADDRESS = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
 const CDAI_ADDRESS = '0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643'
 //const IMPERSONATED_ADDRESS = '0x079667f4f7a0B440Ad35ebd780eFd216751f0758' // they got lots of DAI to steal ;)
 const IMPERSONATED_ADDRESS = '0x648148a0063b9d43859d9801f2bf9bb768e22142'
+const INVDAO_TIMELOCK = '0xD93AC1B3D1a465e1D5ef841c141C8090f2716A16'
 
 describe('test in prod', function () {
   let harvester, vault, strat, dai, weth
@@ -24,7 +25,7 @@ describe('test in prod', function () {
 
   it('Should deploy DAI -> WETH Vault', async function () {
     const Vault = await ethers.getContractFactory('EthVault')
-    vault = await Vault.deploy(DAI_ADDRESS, WETH_ADDRESS, harvester.address, 'Test DAI to ETH Vault', 'testDAI>ETH')
+    vault = await Vault.deploy(DAI_ADDRESS, WETH_ADDRESS, harvester.address, INVDAO_TIMELOCK, 'Test DAI to ETH Vault', 'testDAI>ETH')
 
     await vault.deployed()
   })
@@ -50,7 +51,7 @@ describe('test in prod', function () {
     )
     const signer = await ethers.provider.getSigner(IMPERSONATED_ADDRESS)
     vault = vault.connect(signer)
-    dai = (await ethers.getContractAt('IERC20', DAI_ADDRESS)).connect(signer)
+    dai = (await ethers.getContractAt('@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20', DAI_ADDRESS)).connect(signer)
     await dai.approve(vault.address, ethers.utils.parseEther('1000'))
     await vault.deposit(ethers.utils.parseEther('1000'))
     expect(await vault.balanceOf(await signer.getAddress())).to.equal(ethers.utils.parseUnits('1000'))
@@ -74,7 +75,7 @@ describe('test in prod', function () {
       0,
       [DAI_ADDRESS, WETH_ADDRESS],
       future + 10)
-    weth = (await ethers.getContractAt('IERC20', WETH_ADDRESS))
+    weth = (await ethers.getContractAt('@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20', WETH_ADDRESS))
     expect(await weth.balanceOf(vault.address)).to.gt(0)
   })
 

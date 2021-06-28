@@ -34,7 +34,7 @@ describe('harvest finance strategy experiments', function () {
     const signer = await ethers.provider.getSigner(INVERSE_DEPLOYER)
     let Vault = await ethers.getContractFactory('Vault')
     Vault = Vault.connect(signer)
-    vault = await Vault.deploy(DAI, YFI_ADDRESS, HARVESTER, 'HARVESTFI: DAI to YFI Vault', 'testDAI>YFI')
+    vault = await Vault.deploy(DAI, YFI_ADDRESS, HARVESTER, INVDAO_TIMELOCK, 'HARVESTFI: DAI to YFI Vault', 'testDAI>YFI')
 
     await vault.deployed()
   })
@@ -114,7 +114,7 @@ describe('harvest finance strategy experiments', function () {
       method: 'evm_setNextBlockTimestamp',
       params: [timestamp]
     })
-    const farm = (await ethers.getContractAt('IERC20', await strat.rewardtoken())).connect(signer)
+    const farm = (await ethers.getContractAt('@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20', await strat.rewardtoken())).connect(signer)
     await farm.approve(DELAY_MINTER, ethers.utils.parseEther('10000'))
     await farm.approve(NOTIFY_HELPER, ethers.utils.parseEther('10000'))
 
@@ -134,7 +134,7 @@ describe('harvest finance strategy experiments', function () {
     vault = vault.connect(signer)
     const supply = await vault.totalSupply()
     const totalVal = await strat.calcTotalValue()
-    const dai = (await ethers.getContractAt('IERC20', DAI)).connect(signer)
+    const dai = (await ethers.getContractAt('@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20', DAI)).connect(signer)
     await dai.approve(vault.address, ethers.utils.parseEther('11000000'))
     const vaultBalanceBefore = await vault.balanceOf(DAI_BAGS)
     await vault.deposit(ethers.utils.parseEther('20000'))
@@ -173,7 +173,7 @@ describe('harvest finance strategy experiments', function () {
 
     const oldBalance = await dai.balanceOf(DAI_BAGS)
     const rewardTokenAddress = await strat.rewardtoken()
-    const farm = (await ethers.getContractAt('IERC20', rewardTokenAddress)).connect(signer)
+    const farm = (await ethers.getContractAt('@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20', rewardTokenAddress)).connect(signer)
     await farm.approve(strat.address, ethers.utils.parseEther('10000'))
     expect(await farm.balanceOf(strat.address)).to.equal(0)
 
