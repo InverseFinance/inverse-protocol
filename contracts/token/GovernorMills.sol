@@ -157,7 +157,7 @@ contract GovernorMills {
         timelock = TimelockInterface(_timelock);
         inv = InvInterface(_inv);
         xinv = InvInterface(_xinv);
-        guardian = _guardian; // or msg.sender?
+        guardian = _guardian;
         threshold = _threshold;
     }
 
