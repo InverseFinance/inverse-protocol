@@ -161,9 +161,9 @@ contract GovernorMills {
         threshold = _threshold;
     }
 
-    function _getPriorVotes(address _proposer, uint256 _blockNumber) internal view returns (uint) {
-        uint invPriorVotes = inv.getPriorVotes(_proposer, _blockNumber);
-        uint xinvPriorVotes = xinv.getPriorVotes(_proposer, _blockNumber);
+    function _getPriorVotes(address _proposer, uint256 _blockNumber) internal view returns (uint256) {
+        uint256 invPriorVotes = uint256(inv.getPriorVotes(_proposer, _blockNumber));
+        uint256 xinvPriorVotes = uint256(xinv.getPriorVotes(_proposer, _blockNumber));
         
         return add256(invPriorVotes, xinvPriorVotes);
     }
