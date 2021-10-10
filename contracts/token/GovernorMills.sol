@@ -170,7 +170,6 @@ contract GovernorMills {
 
     function setGuardian(address _newGuardian) public {
         require(msg.sender == guardian, "GovernorMills::setGuardian: only guardian");
-        require(_newGuardian != address(0), "GovernorMills::setGuardian: address 0!");
         guardian = _newGuardian;
         
         emit NewGuardian(guardian);
