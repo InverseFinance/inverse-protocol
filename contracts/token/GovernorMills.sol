@@ -6,6 +6,12 @@ interface InvInterface {
     function totalSupply() external view returns (uint256);
 }
 
+interface XinvInterface {
+    function getPriorVotes(address account, uint blockNumber) external view returns (uint96);
+    function totalSupply() external view returns (uint256);
+    function exchangeRateStored() external view returns (uint);
+}
+
 interface TimelockInterface {
     function delay() external view returns (uint);
     function GRACE_PERIOD() external view returns (uint);
@@ -22,11 +28,8 @@ contract GovernorMills {
     /// @notice The name of this contract
     string public constant name = "Inverse Governor Mills";
 
-    /// @notice The number of votes in support of a proposal required in order for a quorum to be reached and for a vote to succeed
-    function quorumVotes() public pure returns (uint) { return 4000e18; } // 4% of INV
-
     /// @notice The maximum number of actions that can be included in a proposal
-    function proposalMaxOperations() public pure returns (uint) { return 20; } // 10 actions
+    function proposalMaxOperations() public pure returns (uint) { return 20; } // 20 actions
 
     /// @notice The delay before voting on a proposal may take place, once proposed
     function votingDelay() public pure returns (uint) { return 1; } // 1 block
@@ -35,22 +38,25 @@ contract GovernorMills {
     function votingPeriod() public pure returns (uint) { return 17280; } // ~3 days in blocks (assuming 15s blocks)
 
     /// @notice The address of the Protocol Timelock
-    TimelockInterface public timelock;
+    TimelockInterface public timelock = TimelockInterface(0x926dF14a23BE491164dCF93f4c468A50ef659D5B);
 
     /// @notice The address of the governance token A
-    InvInterface public inv;
+    InvInterface public inv = InvInterface(0x41D5D79431A913C4aE7d69a668ecdfE5fF9DFB68);
 
     /// @notice The address of the governance token B
-    InvInterface public xinv;
+    XinvInterface public xinv = XinvInterface(0x65b35d6Eb7006e0e607BC54EB2dFD459923476fE);
 
     /// @notice The total number of proposals
     uint256 public proposalCount;
 
     /// @notice The guardian
-    address public guardian;
+    address public guardian = 0x3FcB35a1CbFB6007f9BC638D388958Bc4550cB28;
 
     /// @notice proposal threshold
-    uint256 public threshold;
+    uint256 public proposalThreshold = 1000 ether; // 1k INV
+
+    /// @notice The number of votes in support of a proposal required in order for a quorum to be reached and for a vote to succeed
+    uint256 public quorumVotes = 4000 ether; // 4k INV
 
     struct Proposal {
         /// @notice Unique id for looking up a proposal
@@ -126,6 +132,12 @@ contract GovernorMills {
     /// @notice The latest proposal for each proposer
     mapping (address => uint) public latestProposalIds;
 
+    /// @notice Addresses that can propose without voting power
+    mapping (address => bool) public proposerWhitelist;
+
+    /// @notice proposal id => xinv.exchangeRateStored
+    mapping (uint => uint) xinvExchangeRates;
+
     /// @notice The EIP-712 typehash for the contract's domain
     bytes32 public constant DOMAIN_TYPEHASH = keccak256("EIP712Domain(string name,uint256 chainId,address verifyingContract)");
 
@@ -153,19 +165,23 @@ contract GovernorMills {
     /// @notice An event emitted when proposal threshold is updated
     event ProposalThresholdUpdated(uint256 oldThreshold, uint256 newThreshold);
 
-    constructor(address _timelock, address _inv, address _xinv, address _guardian, uint256 _threshold) public {
-        timelock = TimelockInterface(_timelock);
-        inv = InvInterface(_inv);
-        xinv = InvInterface(_xinv);
-        guardian = _guardian;
-        threshold = _threshold;
-    }
+    /// @notice An event emitted when proposal quorum is updated
+    event QuorumUpdated(uint256 oldQuorum, uint256 newQuorum);
 
-    function _getPriorVotes(address _proposer, uint256 _blockNumber) internal view returns (uint256) {
-        uint256 invPriorVotes = uint256(inv.getPriorVotes(_proposer, _blockNumber));
-        uint256 xinvPriorVotes = uint256(xinv.getPriorVotes(_proposer, _blockNumber));
+    /// @notice An event emitted when an address is added or removed from the proposer whitelist
+    event ProposerWhitelistUpdated(address proposer, bool value);
+
+    function _getPriorVotes(address _proposer, uint256 _blockNumber, uint256 _exchangeRate) internal view returns (uint96) {
+        uint96 invPriorVotes = inv.getPriorVotes(_proposer, _blockNumber);
+        uint96 xinvPriorVotes = uint96(
+            (
+                uint256(
+                    xinv.getPriorVotes(_proposer, _blockNumber)
+                ) * _exchangeRate
+            ) / 1 ether
+        );
         
-        return add256(invPriorVotes, xinvPriorVotes);
+        return add96(invPriorVotes, xinvPriorVotes);
     }
 
     function setGuardian(address _newGuardian) public {
@@ -191,7 +207,7 @@ contract GovernorMills {
     }
 
     function propose(address[] memory targets, uint[] memory values, string[] memory signatures, bytes[] memory calldatas, string memory description) public returns (uint) {
-        require(_getPriorVotes(msg.sender, sub256(block.number, 1)) > proposalThreshold(), "GovernorMills::propose: proposer votes below proposal threshold");
+        require(_getPriorVotes(msg.sender, sub256(block.number, 1), xinv.exchangeRateStored()) > proposalThreshold || proposerWhitelist[msg.sender], "GovernorMills::propose: proposer votes below proposal threshold");
         require(targets.length == values.length && targets.length == signatures.length && targets.length == calldatas.length, "GovernorMills::propose: proposal function information arity mismatch");
         require(targets.length != 0, "GovernorMills::propose: must provide actions");
         require(targets.length <= proposalMaxOperations(), "GovernorMills::propose: too many actions");
@@ -224,6 +240,7 @@ contract GovernorMills {
         });
 
         proposals[newProposal.id] = newProposal;
+        xinvExchangeRates[newProposal.id] = xinv.exchangeRateStored();
         latestProposalIds[newProposal.proposer] = newProposal.id;
 
         emit ProposalCreated(newProposal.id, msg.sender, targets, values, signatures, calldatas, startBlock, endBlock, description);
@@ -261,7 +278,7 @@ contract GovernorMills {
         require(state != ProposalState.Executed, "GovernorMills::cancel: cannot cancel executed proposal");
 
         Proposal storage proposal = proposals[proposalId];
-        require(msg.sender == guardian || _getPriorVotes(proposal.proposer, sub256(block.number, 1)) < proposalThreshold(), "GovernorMills::cancel: proposer above threshold");
+        require(msg.sender == guardian || (_getPriorVotes(proposal.proposer, sub256(block.number, 1), xinvExchangeRates[proposal.id]) < proposalThreshold && !proposerWhitelist[proposal.proposer]), "GovernorMills::cancel: proposer above threshold");
 
         proposal.canceled = true;
         for (uint i = 0; i < proposal.targets.length; i++) {
@@ -276,14 +293,47 @@ contract GovernorMills {
      * @param newThreshold The new threshold to set.
      */
     function updateProposalThreshold(uint256 newThreshold) public {
-        require(msg.sender == guardian, "GovernorMills::updateProposalThreshold: sender must be gov guardian");
+        require(msg.sender == guardian || msg.sender == address(timelock), "GovernorMills::updateProposalThreshold: sender must be gov guardian or timelock");
         require(newThreshold <= inv.totalSupply(), "GovernorMills::updateProposalThreshold: threshold too large");
-        require(newThreshold != proposalThreshold(), "GovernorMills::updateProposalThreshold: no change in value");
+        require(newThreshold != proposalThreshold, "GovernorMills::updateProposalThreshold: no change in value");
 
-        uint256 oldThreshold = proposalThreshold();
-        threshold = newThreshold;
+        uint256 oldThreshold = proposalThreshold;
+        proposalThreshold = newThreshold;
 
         emit ProposalThresholdUpdated(oldThreshold, newThreshold);
+    }
+
+    /**
+     * @notice Update the quorum value required to pass a proposal.
+     * @param newQuorum The new quorum to set.
+     */
+    function updateProposalQuorum(uint256 newQuorum) public {
+        require(msg.sender == guardian || msg.sender == address(timelock), "GovernorMills::newQuorum: sender must be gov guardian or timelock");
+        require(newQuorum <= inv.totalSupply(), "GovernorMills::newQuorum: threshold too large");
+        require(newQuorum != quorumVotes, "GovernorMills::newQuorum: no change in value");
+
+        uint256 oldQuorum = quorumVotes;
+        quorumVotes = newQuorum;
+
+        emit QuorumUpdated(oldQuorum, newQuorum);
+    }
+
+    function acceptAdmin() public {
+        require(msg.sender == guardian, "GovernorMills::acceptAdmin: sender must be gov guardian");
+        timelock.acceptAdmin();
+    }
+
+    /**
+     * @notice Add or remove an address to the proposerWhitelist
+     * @param proposer address to be updated on the whitelist
+     * @param value true to add, false to remove
+     */
+    function updateProposerWhitelist(address proposer, bool value) public {
+        require(msg.sender == address(timelock), "GovernorMills::newQuorum: sender must be timelock");
+
+        proposerWhitelist[proposer] = value;
+
+        emit ProposerWhitelistUpdated(proposer, value);
     }
 
     function getActions(uint proposalId) public view returns (address[] memory targets, uint[] memory values, string[] memory signatures, bytes[] memory calldatas) {
@@ -304,7 +354,7 @@ contract GovernorMills {
             return ProposalState.Pending;
         } else if (block.number <= proposal.endBlock) {
             return ProposalState.Active;
-        } else if (proposal.forVotes <= proposal.againstVotes || proposal.forVotes < quorumVotes()) {
+        } else if (proposal.forVotes <= proposal.againstVotes || proposal.forVotes < quorumVotes) {
             return ProposalState.Defeated;
         } else if (proposal.eta == 0) {
             return ProposalState.Succeeded;
@@ -335,9 +385,7 @@ contract GovernorMills {
         Proposal storage proposal = proposals[proposalId];
         Receipt storage receipt = proposal.receipts[voter];
         require(receipt.hasVoted == false, "GovernorMills::_castVote: voter already voted");
-        uint96 invVotes = inv.getPriorVotes(voter, proposal.startBlock);
-        uint96 xinvVotes = xinv.getPriorVotes(voter, proposal.startBlock);
-        uint96 votes = add96(invVotes, xinvVotes);
+        uint96 votes = _getPriorVotes(voter, proposal.startBlock, xinvExchangeRates[proposal.id]);
 
         if (support) {
             proposal.forVotes = add256(proposal.forVotes, votes);
@@ -375,8 +423,4 @@ contract GovernorMills {
         return chainId;
     }
 
-    /// @notice The number of votes required in order for a voter to become a proposer
-    function proposalThreshold() public view returns (uint) { 
-        return threshold;
-    }
 }
