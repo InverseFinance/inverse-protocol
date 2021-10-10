@@ -9,7 +9,7 @@ interface InvInterface {
 interface XinvInterface {
     function getPriorVotes(address account, uint blockNumber) external view returns (uint96);
     function totalSupply() external view returns (uint256);
-    function exchangeRateStored() external view returns (uint);
+    function exchangeRateCurrent() external returns (uint);
 }
 
 interface TimelockInterface {
@@ -135,7 +135,7 @@ contract GovernorMills {
     /// @notice Addresses that can propose without voting power
     mapping (address => bool) public proposerWhitelist;
 
-    /// @notice proposal id => xinv.exchangeRateStored
+    /// @notice proposal id => xinv.exchangeRateCurrent
     mapping (uint => uint) xinvExchangeRates;
 
     /// @notice The EIP-712 typehash for the contract's domain
@@ -207,7 +207,7 @@ contract GovernorMills {
     }
 
     function propose(address[] memory targets, uint[] memory values, string[] memory signatures, bytes[] memory calldatas, string memory description) public returns (uint) {
-        require(_getPriorVotes(msg.sender, sub256(block.number, 1), xinv.exchangeRateStored()) > proposalThreshold || proposerWhitelist[msg.sender], "GovernorMills::propose: proposer votes below proposal threshold");
+        require(_getPriorVotes(msg.sender, sub256(block.number, 1), xinv.exchangeRateCurrent()) > proposalThreshold || proposerWhitelist[msg.sender], "GovernorMills::propose: proposer votes below proposal threshold");
         require(targets.length == values.length && targets.length == signatures.length && targets.length == calldatas.length, "GovernorMills::propose: proposal function information arity mismatch");
         require(targets.length != 0, "GovernorMills::propose: must provide actions");
         require(targets.length <= proposalMaxOperations(), "GovernorMills::propose: too many actions");
@@ -240,7 +240,7 @@ contract GovernorMills {
         });
 
         proposals[newProposal.id] = newProposal;
-        xinvExchangeRates[newProposal.id] = xinv.exchangeRateStored();
+        xinvExchangeRates[newProposal.id] = xinv.exchangeRateCurrent();
         latestProposalIds[newProposal.proposer] = newProposal.id;
 
         emit ProposalCreated(newProposal.id, msg.sender, targets, values, signatures, calldatas, startBlock, endBlock, description);
