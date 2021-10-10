@@ -329,7 +329,7 @@ contract GovernorMills {
      * @param value true to add, false to remove
      */
     function updateProposerWhitelist(address proposer, bool value) public {
-        require(msg.sender == address(timelock), "GovernorMills::newQuorum: sender must be timelock");
+        require(msg.sender == address(timelock), "GovernorMills::updateProposerWhitelist: sender must be timelock");
 
         proposerWhitelist[proposer] = value;
 
