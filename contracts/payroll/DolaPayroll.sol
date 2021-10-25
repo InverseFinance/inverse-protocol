@@ -3,23 +3,19 @@ pragma solidity ^0.7.3;
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import "./ReentrancyGuard.sol";
-
-contract DolaPayroll is ReentrancyGuard {
+contract DolaPayroll {
     using SafeERC20 for IERC20;
 
     mapping(address => Recipient) public recipients;
 
-    address public constant dolaAddress = 0x865377367054516e17014CcdED1e7d814EDC9ce4;
     address public constant treasuryAddress = 0x926dF14a23BE491164dCF93f4c468A50ef659D5B;
-    address public constant governance = 0x35d9f4953748b318f18c30634bA299b237eeDfff;
-    IERC20 public DOLA = IERC20(dolaAddress);
-    uint256 public monthPeriod = 30 days;
-
-    address public fundingCommittee;
+    address public constant governance = 0x926dF14a23BE491164dCF93f4c468A50ef659D5B;
+    IERC20 public constant DOLA = IERC20(0x865377367054516e17014CcdED1e7d814EDC9ce4);
+    
+    uint256 public yearlyPeriod = 365 days;
+    address public fundingCommittee = 0x77C64eEF5F4781Dd6e9405a8a77D80567CFD37E0;
 
     struct Recipient {
-        bool exists;
         uint256 lastClaim;
         uint256 ratePerSecond;
         uint256 startTime;
@@ -28,49 +24,43 @@ contract DolaPayroll is ReentrancyGuard {
     event NewRecipient(address recipient, uint256 amount);
     event RecipientRemoved(address recipient, uint256 amount);
     event AmountWithdrawn(address recipient, uint256 amount);
-    event MonthlyPeriodUpdated(uint256 from, uint256 to);
     event UpdatedFundingCommittee(address from, address to);
 
-    constructor(address _fundingCommittee) public {
-        fundingCommittee = _fundingCommittee;
-    }
+    constructor() public {}
 
     /**
      * @notice Add a new salary recipient. No notion of stop time. payment can be cancelled by committee or governance at any future time
      * @param _newRecipient new recipient of salary
-     * @param _amount monthly salary
-     * @param _startTime when accrual of salary starts
+     * @param _yearlyAmount monthly salary
      */
-    function addRecipient(address _newRecipient, uint256 _amount, uint256 _startTime) external {
+    function addRecipient(address _newRecipient, uint256 _yearlyAmount) external {
         require(msg.sender == governance || msg.sender == fundingCommittee, "DolaPayroll::addRecipient: only governance or funding committee!");
-        require(!recipients[_newRecipient].exists, "DolaPayroll::addRecipient: recipient already exists!");
+        require(recipients[_newRecipient].ratePerSecond == 0, "DolaPayroll::addRecipient: recipient already exists!");
         require(_newRecipient != address(0), "DolaPayroll::addRecipient: zero address!");
         require(_newRecipient != address(this), "DolaPayroll::addRecipient: recipient can't be this contract");
-        require(_amount > 0, "DolaPayroll::addRecipient: amount must be greater than 0");
-        require(_startTime >= block.timestamp, "DolaPayroll::addRecipient: start time gte than block time");
+        require(_yearlyAmount > 0, "DolaPayroll::addRecipient: amount must be greater than 0");
         // ensure amount is gte to month period else, payment rate per second will be 0
-        require(_amount >= monthPeriod, "DolaPayroll:addRecipient: amount too low for month period!");
+        require(_yearlyAmount >= yearlyPeriod, "DolaPayroll:addRecipient: amount too low for month period!");
 
         // no notion of end time so using month period, which gov or committee can update. rate per second is calculated on monthly basis
-        uint256 amountPerSecond = _div256(_amount, monthPeriod);
+        uint256 amountPerSecond = _div256(_yearlyAmount, yearlyPeriod);
 
         recipients[_newRecipient] = Recipient({
-            exists: true,
             lastClaim: 0,
             ratePerSecond: amountPerSecond,
-            startTime: _startTime
+            startTime: block.timestamp
         });
 
-        emit NewRecipient(_newRecipient, _amount);
+        emit NewRecipient(_newRecipient, _yearlyAmount);
     }
 
     /**
      * @notice Remove recipient from receiving salary
      * @param _recipient recipient to whom it may concern
      */
-    function removeRecipient(address _recipient) external nonReentrant {
-        require(msg.sender == governance || msg.sender == fundingCommittee, "DolaPayroll::removeRecipient: only governance or funding committee");
-        require(recipients[_recipient].exists, "DolaPayroll::removeRecipient: recipient does not exist!");
+    function removeRecipient(address _recipient) external {
+        require(msg.sender == governance || msg.sender == fundingCommittee || msg.sender == _recipient, "DolaPayroll::removeRecipient: only governance or funding committee");
+        require(recipients[_recipient].ratePerSecond != 0, "DolaPayroll::removeRecipient: recipient does not exist!");
 
         // calculate remaining balances and delete recipient entry from recipients mapping, then transfer remaining dola to recipient
         Recipient memory recipient = recipients[_recipient];
@@ -78,7 +68,7 @@ contract DolaPayroll is ReentrancyGuard {
         uint256 amount;
         if (delta > 0) {
             // transfer remaining unclaimed to recipient
-            amount = _mul256(recipient.ratePerSecond, delta);
+            amount = _balanceOf(_recipient, delta);
             DOLA.safeTransferFrom(treasuryAddress, _recipient, amount);
         }
 
@@ -89,14 +79,14 @@ contract DolaPayroll is ReentrancyGuard {
     /**
     * @notice withdraw salary
     */
-    function withdraw() external nonReentrant {
-        require(recipients[msg.sender].exists, "DolaPayroll::withdraw: not a recipient!");
+    function withdraw() external {
+        require(recipients[msg.sender].ratePerSecond != 0, "DolaPayroll::withdraw: not a recipient!");
         uint256 delta = _delta(msg.sender);
         require(delta > 0, "DolayPayroll::withdraw: not enough time elapsed!");
         
         Recipient storage recipient = recipients[msg.sender];
         recipient.lastClaim = block.timestamp;
-        uint256 amount = _mul256(recipient.ratePerSecond, delta);
+        uint256 amount = _balanceOf(msg.sender, delta);
         DOLA.safeTransferFrom(treasuryAddress, msg.sender, amount);
 
         emit AmountWithdrawn(msg.sender, amount);
@@ -112,20 +102,6 @@ contract DolaPayroll is ReentrancyGuard {
             delta = _sub256(block.timestamp, recipient.lastClaim);
         }
         return delta;
-    }
-
-    /**
-     * @notice update month period used for salary calculations (rate per second)
-     * @param _period new month period
-     */
-    function updateMonthPeriod(uint256 _period) external {
-        require(msg.sender == governance || msg.sender == fundingCommittee, "DolaPayroll::updateMonthPeriod: only governance or funding committee!");
-        require(_period != monthPeriod, "DolaPayroll::updateMonthPeriod: period already set!");
-        require(28 days <= _period && _period <= 31 days, "DolaPayroll::updateMonthPeriod: invalid period!");
-
-        uint256 from = monthPeriod;
-        monthPeriod = _period;
-        emit MonthlyPeriodUpdated(from, _period);
     }
 
     /**
@@ -149,8 +125,13 @@ contract DolaPayroll is ReentrancyGuard {
     function balanceOf(address _recipient) external view returns (uint256) {
         uint256 delta = _delta(_recipient);
         if (delta == 0) return 0;
-        Recipient memory recipient = recipients[_recipient];
 
+        return _balanceOf(_recipient, delta);
+    }
+
+    // avoid recalculating delta
+    function _balanceOf(address _recipient, uint256 delta) internal view returns (uint256) {
+        Recipient memory recipient = recipients[_recipient];
         return _mul256(recipient.ratePerSecond, delta);
     }
 
