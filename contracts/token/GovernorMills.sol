@@ -38,19 +38,19 @@ contract GovernorMills {
     function votingPeriod() public pure returns (uint) { return 17280; } // ~3 days in blocks (assuming 15s blocks)
 
     /// @notice The address of the Protocol Timelock
-    TimelockInterface public timelock = TimelockInterface(0x926dF14a23BE491164dCF93f4c468A50ef659D5B);
+    TimelockInterface public timelock;
 
     /// @notice The address of the governance token A
-    InvInterface public inv = InvInterface(0x41D5D79431A913C4aE7d69a668ecdfE5fF9DFB68);
+    InvInterface public inv;
 
     /// @notice The address of the governance token B
-    XinvInterface public xinv = XinvInterface(0x65b35d6Eb7006e0e607BC54EB2dFD459923476fE);
+    XinvInterface public xinv;
 
     /// @notice The total number of proposals
     uint256 public proposalCount;
 
     /// @notice The guardian
-    address public guardian = 0x3FcB35a1CbFB6007f9BC638D388958Bc4550cB28;
+    address public guardian;
 
     /// @notice proposal threshold
     uint256 public proposalThreshold = 1000 ether; // 1k INV
@@ -170,6 +170,13 @@ contract GovernorMills {
 
     /// @notice An event emitted when an address is added or removed from the proposer whitelist
     event ProposerWhitelistUpdated(address proposer, bool value);
+
+    constructor(TimelockInterface timelock_, InvInterface inv_, XinvInterface xinv_) public {
+        timelock = timelock_;
+        inv = inv_;
+        xinv = xinv_;
+        guardian = msg.sender;
+    }
 
     function _getPriorVotes(address _proposer, uint256 _blockNumber, uint256 _exchangeRate) internal view returns (uint96) {
         uint96 invPriorVotes = inv.getPriorVotes(_proposer, _blockNumber);
