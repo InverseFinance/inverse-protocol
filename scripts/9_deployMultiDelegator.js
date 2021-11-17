@@ -3,8 +3,9 @@ const prompt = require('async-prompt');
 async function main() {
 
     const inv = await prompt('Enter inv token address: ');
+    const xinv = await prompt('Enter xinv token address: ');
     const MultiDelegator = await ethers.getContractFactory("MultiDelegator");
-    const multiDelegator = await MultiDelegator.deploy(inv);
+    const multiDelegator = await MultiDelegator.deploy(inv, xinv);
     await multiDelegator.deployed();
     console.log("MultiDelegator deployed to:", multiDelegator.address);
   }
