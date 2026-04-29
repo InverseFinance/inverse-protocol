@@ -31,11 +31,14 @@ contract GovernorMills {
     /// @notice The maximum number of actions that can be included in a proposal
     function proposalMaxOperations() public pure returns (uint) { return 20; } // 20 actions
 
-    /// @notice The delay before voting on a proposal may take place, once proposed
-    function votingDelay() public pure returns (uint) { return 1; } // 1 block
+    /// @notice The delay before voting on a proposal may take place, once proposed (in blocks)
+    uint256 public votingDelay = 1; // 1 block
 
     /// @notice The duration of voting on a proposal, in blocks
-    function votingPeriod() public pure returns (uint) { return 17280; } // ~3 days in blocks (assuming 15s blocks)
+    uint256 public votingPeriod = 23564; // ~3 days in blocks (assuming 11s blocks)
+
+    /// @notice The duration after which a proposal needs to be queued after succeeding
+    uint256 public queuePeriod = 23564;
 
     /// @notice The address of the Protocol Timelock
     TimelockInterface public timelock;
@@ -171,6 +174,15 @@ contract GovernorMills {
     /// @notice An event emitted when an address is added or removed from the proposer whitelist
     event ProposerWhitelistUpdated(address proposer, bool value);
 
+    /// @notice An event emitted when the voting delay is updated
+    event VotingDelayUpdated(uint256 oldVotingDelay, uint256 newVotingDelay);
+
+    /// @notice An event emitted when the voting period is updated
+    event VotingPeriodUpdated(uint256 oldVotingPeriod, uint256 newVotingPeriod);
+
+    /// @notice An event emitted when the queue period is updated
+    event QueuePeriodUpdated(uint256 oldQueuePeriod, uint256 newQueuePeriod);
+
     constructor(TimelockInterface timelock_, InvInterface inv_, XinvInterface xinv_) public {
         timelock = timelock_;
         inv = inv_;
@@ -226,8 +238,8 @@ contract GovernorMills {
           require(proposersLatestProposalState != ProposalState.Pending, "GovernorMills::propose: one live proposal per proposer, found an already pending proposal");
         }
 
-        uint startBlock = add256(block.number, votingDelay());
-        uint endBlock = add256(startBlock, votingPeriod());
+        uint startBlock = add256(block.number, votingDelay);
+        uint endBlock = add256(startBlock, votingPeriod);
 
         proposalCount++;
         Proposal memory newProposal = Proposal({
@@ -325,6 +337,50 @@ contract GovernorMills {
         emit QuorumUpdated(oldQuorum, newQuorum);
     }
 
+    /**
+     * @notice Update the voting delay (in blocks) before voting on a proposal may take place.
+     * @param newVotingDelay The new voting delay to set.
+     */
+    function updateVotingDelay(uint256 newVotingDelay) public {
+        require(msg.sender == address(timelock), "GovernorMills::updateVotingDelay: sender must be timelock");
+        require(newVotingDelay != votingDelay, "GovernorMills::updateVotingDelay: no change in value");
+
+        uint256 oldVotingDelay = votingDelay;
+        votingDelay = newVotingDelay;
+
+        emit VotingDelayUpdated(oldVotingDelay, newVotingDelay);
+    }
+
+    /**
+     * @notice Update the voting period (in blocks) for a proposal.
+     * @param newVotingPeriod The new voting period to set.
+     */
+    function updateVotingPeriod(uint256 newVotingPeriod) public {
+        require(msg.sender == address(timelock), "GovernorMills::updateVotingPeriod: sender must be timelock");
+        require(newVotingPeriod >= 328, "GovernorMills::updateVotingPeriod: voting period too short");
+        require(newVotingPeriod != votingPeriod, "GovernorMills::updateVotingPeriod: no change in value");
+
+        uint256 oldVotingPeriod = votingPeriod;
+        votingPeriod = newVotingPeriod;
+
+        emit VotingPeriodUpdated(oldVotingPeriod, newVotingPeriod);
+    }
+
+    /**
+     * @notice Update the queue period (in blocks) for a proposal.
+     * @param newQueuePeriod The new queue period to set.
+     */
+    function updateQueuePeriod(uint256 newQueuePeriod) public {
+        require(msg.sender == address(timelock), "GovernorMills::updateQueuePeriod: sender must be timelock");
+        require(newQueuePeriod >= 328, "GovernorMills::updateQueuePeriod: queue period too short");
+        require(newQueuePeriod != queuePeriod, "GovernorMills::updateQueuePeriod: no change in value");
+
+        uint256 oldQueuePeriod = queuePeriod;
+        queuePeriod = newQueuePeriod;
+
+        emit QueuePeriodUpdated(oldQueuePeriod, newQueuePeriod);
+    }
+
     function acceptAdmin() public {
         require(msg.sender == guardian, "GovernorMills::acceptAdmin: sender must be gov guardian");
         timelock.acceptAdmin();
@@ -364,6 +420,9 @@ contract GovernorMills {
         } else if (proposal.forVotes <= proposal.againstVotes || proposal.forVotes < quorumVotes) {
             return ProposalState.Defeated;
         } else if (proposal.eta == 0) {
+            if (block.number > add256(proposal.endBlock, queuePeriod)) {
+                return ProposalState.Expired;
+            }
             return ProposalState.Succeeded;
         } else if (proposal.executed) {
             return ProposalState.Executed;
