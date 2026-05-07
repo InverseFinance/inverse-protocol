@@ -37,7 +37,7 @@ contract GovernorMills {
     /// @notice The duration of voting on a proposal, in blocks
     uint256 public votingPeriod = 23564; // ~3 days in blocks (assuming 11s blocks)
 
-    /// @notice The duration after which a proposal needs to be queued after succeeding
+    /// @notice The duration for which a proposal is queueable after succeeding
     uint256 public queuePeriod = 23564;
 
     /// @notice The address of the Protocol Timelock
@@ -357,7 +357,8 @@ contract GovernorMills {
      */
     function updateVotingPeriod(uint256 newVotingPeriod) public {
         require(msg.sender == address(timelock), "GovernorMills::updateVotingPeriod: sender must be timelock");
-        require(newVotingPeriod >= 328, "GovernorMills::updateVotingPeriod: voting period too short");
+        //Minimum voting period of 12 hours at 11s per block
+        require(newVotingPeriod >= 3927, "GovernorMills::updateVotingPeriod: voting period too short");
         require(newVotingPeriod != votingPeriod, "GovernorMills::updateVotingPeriod: no change in value");
 
         uint256 oldVotingPeriod = votingPeriod;
@@ -372,7 +373,8 @@ contract GovernorMills {
      */
     function updateQueuePeriod(uint256 newQueuePeriod) public {
         require(msg.sender == address(timelock), "GovernorMills::updateQueuePeriod: sender must be timelock");
-        require(newQueuePeriod >= 328, "GovernorMills::updateQueuePeriod: queue period too short");
+        //Minimum queuing period of 12 hours at 11s per block
+        require(newQueuePeriod >= 3927, "GovernorMills::updateQueuePeriod: queue period too short");
         require(newQueuePeriod != queuePeriod, "GovernorMills::updateQueuePeriod: no change in value");
 
         uint256 oldQueuePeriod = queuePeriod;
