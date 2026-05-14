@@ -1,6 +1,8 @@
 pragma solidity ^0.5.16;
 pragma experimental ABIEncoderV2;
 
+import {Guardian} from "./Guardian.sol";
+
 interface InvInterface {
     function getPriorVotes(address account, uint blockNumber) external view returns (uint96);
     function totalSupply() external view returns (uint256);
@@ -187,7 +189,7 @@ contract GovernorMills {
         timelock = timelock_;
         inv = inv_;
         xinv = xinv_;
-        guardian = msg.sender;
+        guardian = address(new Guardian(msg.sender));
     }
 
     function _getPriorVotes(address _proposer, uint256 _blockNumber, uint256 _exchangeRate) internal view returns (uint96) {
