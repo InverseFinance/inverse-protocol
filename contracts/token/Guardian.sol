@@ -55,6 +55,7 @@ contract Guardian {
         require(msg.sender == rwg, "Guardian: not rwg");
         require(cancellableProposals[proposalId], "Guardian: not cancellable");
         governorMills.cancel(proposalId);
+        cancellableProposals[proposalId] = false;
         emit ExecuteCancel(proposalId);
     }
 
